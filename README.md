@@ -1,3 +1,17 @@
+ลงเพิ่ม
+pnpm add -D @tanstack/react-query-devtools
+
+pnpm add react-hook-form
+
+pnpm dlx shadcn@latest init 
+
+pnpm add axios
+
+pnpm add zod
+
+
+
+
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
 ## Getting Started
