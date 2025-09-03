@@ -33,10 +33,10 @@ export default function SignInContainer() {
   });
 
   const onValid = async (values: SignInValues) => {
-    // TODO: เรียก API เข้าสู่ระบบ
+    // เรียก API เข้าสู่ระบบ
     // await api.signIn(values);
     await new Promise((r) => setTimeout(r, 500)); // mock
-    router.push("/"); // หรือแดชบอร์ด
+    router.push("/"); // แดชบอร์ด
   };
 
   return (
