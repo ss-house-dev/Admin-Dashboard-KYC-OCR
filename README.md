@@ -9,6 +9,9 @@ pnpm add axios
 
 pnpm add zod
 
+pnpm add react-hook-form zod @hookform/resolvers
+
+
 
 
 
