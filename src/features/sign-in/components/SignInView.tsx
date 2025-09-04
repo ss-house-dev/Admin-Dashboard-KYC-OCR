@@ -6,6 +6,7 @@ import type { FieldErrors, UseFormRegister } from "react-hook-form";
 import type { SignInValues } from "../containers/SignInContainer";
 import TextField from "@/features/sign-up/components/TextField";
 import PasswordField from "@/features/sign-up/components/PasswordField";
+import { cn } from "@/lib/utils";
 
 type Props = {
   register: UseFormRegister<SignInValues>;
@@ -27,25 +28,13 @@ export default function SignInView({
   return (
     <div className="grid h-full grid-cols-1 overflow-hidden lg:grid-cols-2">
       <div className="flex h-full items-center justify-center bg-gradient-to-b from-white to-gray-50">
-        <div
-          className="
-      w-full
-      max-w-[420px] lg:max-w-[480px] xl:max-w-[520px] 2xl:max-w-[560px]
-      rounded-2xl border border-gray-200 bg-white shadow-sm
-      grid grid-rows-[auto,1fr,auto]
-      gap-y-2 lg:gap-y-3
-      px-5 pt-5 pb-4
-      lg:px-7 lg:pt-6 lg:pb-5
-      xl:px-8 xl:pt-7 xl:pb-6
-      2xl:px-10 2xl:pt-8 2xl:pb-7
-    "
-        >
+        <div className={cn("w-[520px]  bg-red-200", "p-6 rounded-[10px]")}>
           {/* หัวเรื่อง */}
-          <div className="text-center">
-            <h1 className="text-xl lg:text-2xl xl:text-[28px] font-semibold leading-6 text-gray-900">
+          <div className="text-center space-y-2 mb-6">
+            <h1 className="text-[24px]  font-semibold leading-6 text-gray-900">
               Sign In
             </h1>
-            <p className="mt-2 text-xs lg:text-sm leading-4 text-gray-500">
+            <p className="mt-2 text-[14px] leading-4 text-gray-500">
               Let's verify your identity
             </p>
           </div>
@@ -53,19 +42,16 @@ export default function SignInView({
           {/* ฟิลด์ */}
           <form
             onSubmit={onSubmit}
-            className="
-        min-h-0 overflow-auto pr-1
-        space-y-2.5 lg:space-y-3
-        mt-[30px]   /* คง 30px ตามที่ขอ */
+            className=" mb-5 space-y- 
       "
           >
             <TextField
-              label="E-mail or username"
-              placeholder="Enter your E-mail or username"
+              label="Username"
+              placeholder="Enter your Username"
               registration={register("loginId")}
               error={errors.loginId?.message as string | undefined}
               autoComplete="username"
-              inputClassName="py-2.5 lg:py-3 xl:py-3.5"
+              inputClassName="mt-2"
             />
 
             <PasswordField
@@ -76,12 +62,12 @@ export default function SignInView({
               show={showPw}
               onToggleShow={() => setShowPw((s) => !s)}
               autoComplete="current-password"
-              inputClassName="py-2.5 lg:py-3 xl:py-3.5"
+              inputClassName="mt-2"
             />
           </form>
 
           {/* ปุ่มล่าง */}
-          <div className="pt-0">
+          <div className="">
             <button type="submit" formAction="" className="hidden" />
             <button
               type="submit"
@@ -93,16 +79,16 @@ export default function SignInView({
               disabled={isSubmitting}
               className="
           w-full rounded-lg
-          bg-gradient-to-r from-blue-500 to-blue-700
-          py-2.5 lg:py-3
-          text-white shadow transition-opacity disabled:opacity-60
-          text-sm lg:text-base
+          bg-gradient-to-r from-blue-600 to-blue-700
+          py-3 
+          text-white 
+          text-base 
         "
             >
               {isSubmitting ? "Logging in..." : "Login"}
             </button>
 
-            <p className="mt-2 lg:mt-3 mb-0 text-center text-xs lg:text-sm text-gray-600">
+            <p className="mt-4 text-center text-xs  text-gray-600">
               Don't have an account?{" "}
               <button
                 type="button"
@@ -130,7 +116,6 @@ export default function SignInView({
             priority
           />
         </div>
-        <div className="pointer-events-none absolute -bottom-24 -right-24 size-[240px] rounded-full border border-white" />
       </div>
     </div>
   );
