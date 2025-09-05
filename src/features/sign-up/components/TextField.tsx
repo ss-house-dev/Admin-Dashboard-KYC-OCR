@@ -7,9 +7,9 @@ import { cn } from "@/lib/utils";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 
+// ...imports เดิม
 type Props = InputHTMLAttributes<HTMLInputElement> & {
   label: React.ReactNode;
-  /** ข้อความช่วยอธิบายใต้ label */
   helpText?: React.ReactNode;
   error?: string;
   registration?: UseFormRegisterReturn;
@@ -26,26 +26,26 @@ export default function TextField({
   inputClassName,
   labelClassName,
   id,
+  name, // <- เผื่อส่ง name มาตรง ๆ
   ...rest
 }: Props) {
-  // ให้มี id เสมอเพื่อผูกกับ label/description ได้
-  const reactId = React.useId();
-  const inputId = id ?? `tf-${reactId}`;
+  // ใช้ชื่อฟิลด์เป็นฐาน id ที่ deterministic
+  const fieldName = registration?.name ?? name;
+  const reactId = React.useId(); // fallback เท่านั้น
+  const inputId = id ?? (fieldName ? `tf-${fieldName}` : `tf-${reactId}`);
+
   const descId = helpText ? `${inputId}-desc` : undefined;
   const errId = error ? `${inputId}-err` : undefined;
-
-  // รวม aria-describedby จากทั้ง help และ error
   const describedBy = [descId, errId].filter(Boolean).join(" ") || undefined;
 
   return (
     <div className={cn("mt-2 space-y-1", className)}>
       <Label htmlFor={inputId} className={labelClassName}>
-        {" "}
         {label}
       </Label>
 
       {helpText && (
-        <p id={descId} className="text-[10px]  text-[#282828] mb-1">
+        <p id={descId} className="mb-1 text-[10px] leading-4 text-[#282828]">
           {helpText}
         </p>
       )}
@@ -58,6 +58,7 @@ export default function TextField({
         className={cn(inputClassName)}
         {...rest}
         {...registration}
+        name={fieldName}
       />
 
       {error && (
