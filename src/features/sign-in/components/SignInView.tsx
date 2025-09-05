@@ -112,6 +112,7 @@ export default function SignInView({
             priority
           />
         </div>
+        <div className="pointer-events-none absolute -bottom-24 -right-24 size-[240px] rounded-full border border-white" />
       </div>
     </div>
   );
