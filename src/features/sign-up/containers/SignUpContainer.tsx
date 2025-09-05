@@ -1,11 +1,14 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useForm } from "react-hook-form";
+import { useForm, type SubmitErrorHandler } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
+import type { AxiosError } from "axios";
 import SignUpView from "../components/SignUpView";
+import { useSignUpAndAutoLogin } from "../hooks";
 
+/* ===== Regex / Schemas ===== */
 // Username: อังกฤษ/ตัวเลข 6–50
 const usernameRegex = /^[A-Za-z0-9]{6,50}$/;
 
@@ -60,8 +63,10 @@ const SignUpSchema = z
 
 export type SignUpValues = z.infer<typeof SignUpSchema>;
 
+/* ===== Container ===== */
 export default function SignUpContainer() {
   const router = useRouter();
+  const signupMut = useSignUpAndAutoLogin();
 
   const form = useForm<SignUpValues>({
     resolver: zodResolver(SignUpSchema),
@@ -77,18 +82,53 @@ export default function SignUpContainer() {
     },
   });
 
+  // สมัคร → ล็อกอินอัตโนมัติ  → ไปหน้า /
   const onValid = async (values: SignUpValues) => {
-    // เรียก API สมัคร + ส่งอีเมลยืนยัน (AC2)
-    await new Promise((r) => setTimeout(r, 600)); // mock
-    router.push("/sign-up/check-email");
+    try {
+      await signupMut.mutateAsync({
+        username: values.username,
+        password: values.password,
+        company: {
+          name: values.companyName,
+          contactEmail: values.companyEmail,
+          contactPhone: values.companyTel,
+        },
+      });
+      router.push("/admin-dashboard");
+    } catch (e) {
+      const err = e as AxiosError<any>;
+      const status = err.response?.status;
+      const msg = (err.response?.data as any)?.message ?? "สมัครไม่สำเร็จ";
+
+      // แม็ป error ที่พบบ่อยให้ชี้ฟิลด์ถูกต้อง
+      if (status === 409) {
+        form.setError("username", {
+          type: "server",
+          message: "Username นี้ถูกใช้แล้ว",
+        });
+        return;
+      }
+      if (status === 400) {
+        // ข้อมูลไม่ครบหรือรูปแบบไม่ถูก
+        form.setError("companyEmail", { type: "server", message: msg });
+        return;
+      }
+      // เผื่อกรณีอื่น ๆ
+      alert(msg);
+    }
+  };
+
+  const onInvalid: SubmitErrorHandler<SignUpValues> = (errors) => {
+    const first = Object.keys(errors)[0] as keyof SignUpValues | undefined;
+    if (first) form.setFocus(first);
   };
 
   return (
     <SignUpView
       register={form.register}
       errors={form.formState.errors}
-      isSubmitting={form.formState.isSubmitting}
-      onSubmit={form.handleSubmit(onValid)}
+      isSubmitting={signupMut.isPending}
+      onSubmit={form.handleSubmit(onValid, onInvalid)}
       onGoSignIn={() => router.push("/sign-in")}
     />
   );
