@@ -45,7 +45,7 @@ export default function TextField({
       </Label>
 
       {helpText && (
-        <p id={descId} className="text-[10px]  text[#282828] mb-1">
+        <p id={descId} className="text-[10px]  text-[#282828] mb-1">
           {helpText}
         </p>
       )}

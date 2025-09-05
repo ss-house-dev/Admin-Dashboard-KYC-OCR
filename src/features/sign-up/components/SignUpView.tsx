@@ -28,11 +28,13 @@ export default function SignUpView({
   const formId = "sign-up-form";
 
   return (
-    <div className="grid h-dvh grid-cols-1 lg:grid-cols-2 bg:[#F8F8F8]">
+    <div className="grid h-dvh grid-cols-1 lg:grid-cols-2 bg-[#F8F8F8]">
       {/* ซ้าย: การ์ดแบ่ง 3 แถว */}
       <div className="flex items-center justify-center bg-gradient-to-b from-white to-gray-50">
         <div
-          className={cn("w-full max-w-[420px] rounded-2xl border border-gray-200 bg-white shadow-sm p-5 sm:p-6 grid grid-rows-[auto,1fr,auto] h-[min(92dvh,700px)] min-h-[560px]")}
+          className={cn(
+            "w-full max-w-[420px] rounded-2xl border border-gray-200 bg-white shadow-sm p-5 sm:p-6 grid grid-rows-[auto,1fr,auto] h-[min(92dvh,700px)] min-h-[560px]"
+          )}
         >
           {/* แถว 1: หัวเรื่อง */}
           <div className="mb-2 text-center">
