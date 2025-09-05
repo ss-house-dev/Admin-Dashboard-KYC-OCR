@@ -77,13 +77,9 @@ export default function SignInView({
                 form?.requestSubmit();
               }}
               disabled={isSubmitting}
-              className="
-          w-full rounded-lg
-          bg-gradient-to-r from-blue-600 to-blue-700
-          py-3 
-          text-white 
-          text-base 
-        "
+              className={cn(
+                " w-full rounded-lg bg-gradient-to-r from-blue-600 to-blue-700 py-3text-white text-base "
+              )}
             >
               {isSubmitting ? "Logging in..." : "Login"}
             </button>
