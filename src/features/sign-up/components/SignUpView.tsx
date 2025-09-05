@@ -27,7 +27,7 @@ export default function SignUpView({
   const formId = "sign-up-form";
 
   return (
-    <div className="grid h-dvh grid-cols-1 lg:grid-cols-2">
+    <div className="grid h-dvh grid-cols-1 lg:grid-cols-2 bg:[#F8F8F8]">
       {/* ซ้าย: การ์ดแบ่ง 3 แถว */}
       <div className="flex items-center justify-center bg-gradient-to-b from-white to-gray-50">
         <div
@@ -86,21 +86,25 @@ export default function SignUpView({
             />
             <TextField
               label="Username"
-              placeholder="อังกฤษ/ตัวเลข 6–50 ตัว"
+              placeholder="Creat your username"
+              helpText="(3–20 characters, letters and numbers only, no spaces or special symbols.) "
               registration={register("username")}
               error={errors.username?.message as string | undefined}
               autoComplete="username"
               inputClassName="py-2.5"
+              labelClassName="pb-0 mb-1"
             />
             <PasswordField
               label="Password"
               placeholder="Enter your password"
+              helpText="(8–50 chars, 1 uppercase, 1 special, English only.) "
               registration={register("password")}
               error={errors.password?.message as string | undefined}
               show={showPw}
               onToggleShow={() => setShowPw((s) => !s)}
               autoComplete="new-password"
               inputClassName="py-2.5"
+              labelClassName="pb-0 mb-1"
             />
             <PasswordField
               label="Confirm Password"
@@ -118,7 +122,7 @@ export default function SignUpView({
           <div className="pt-2">
             <button
               type="submit"
-              form={formId} 
+              form={formId}
               disabled={isSubmitting}
               className="w-full rounded-lg bg-gradient-to-r from-blue-500 to-blue-700 py-2.5 text-white shadow transition-opacity disabled:opacity-60"
             >
