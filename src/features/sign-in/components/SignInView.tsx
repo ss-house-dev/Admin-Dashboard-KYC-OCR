@@ -28,7 +28,13 @@ export default function SignInView({
   return (
     <div className="grid h-full grid-cols-1 overflow-hidden lg:grid-cols-2 bd:[##F8F8F8]">
       <div className="flex h-full items-center justify-center bg-gradient-to-b from-white to-gray-50">
-        <div className={cn("w-[520px] bg-white", "p-6 rounded-[10px]")}>
+        <div
+          className={cn(
+            "w-[520px] bg-white border border-gray-200",
+            "p-6 rounded-[10px]"
+          )}
+        >
+          {" "}
           {/* หัวเรื่อง */}
           <div className="text-center space-y-2 mb-6">
             <h1 className="text-[24px]  font-semibold leading-6 text-gray-900">
@@ -38,7 +44,6 @@ export default function SignInView({
               Let's verify your identity
             </p>
           </div>
-
           {/* ฟิลด์ */}
           <form onSubmit={onSubmit} className=" mb-5 space-y-2">
             <TextField
@@ -61,7 +66,6 @@ export default function SignInView({
               inputClassName="mt-2"
             />
           </form>
-
           {/* ปุ่มล่าง */}
           <div className="">
             <button type="submit" formAction="" className="hidden" />
