@@ -14,12 +14,12 @@ type MutationInput = SignUpPayload;
 type MutationOutput = AuthTokens;
 
 export function useSignUpAndAutoLogin() {
-  return useMutation<MutationOutput, AxiosError, MutationInput>({
-    mutationFn: async (payload) => {
-      await signUp(payload);
+  return useMutation({
+    mutationFn: async (p: SignUpPayload) => {
+      await signUp(p);
       const tokens = await signIn({
-        loginId: payload.username, 
-        password: payload.password,
+        loginId: p.username,
+        password: p.password,
       });
       persistTokens(tokens);
       return tokens;

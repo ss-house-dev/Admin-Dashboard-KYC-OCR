@@ -3,7 +3,7 @@
 import Image from "next/image";
 import { useState } from "react";
 import type { FieldErrors, UseFormRegister } from "react-hook-form";
-import type { SignUpValues } from "../containers/SignUpContainer";
+import type { SignUpValues } from "../schemas/signUp";
 import TextField from "./TextField";
 import PasswordField from "./PasswordField";
 import { cn } from "@/lib/utils";
@@ -86,7 +86,7 @@ export default function SignUpView({
             <TextField
               label="Username"
               placeholder="Creat your username"
-              helpText="(3–20 characters, letters and numbers only, no spaces or special symbols.) "
+              helpText="(6-50 characters, letters and numbers only, no spaces or special symbols.) "
               registration={register("username")}
               error={errors.username?.message as string | undefined}
               autoComplete="username"

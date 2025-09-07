@@ -11,19 +11,28 @@ export type SignUpPayload = {
 };
 
 export type SignInPayload = {
-  loginId: string; 
+  loginId: string;
   password: string;
 };
 
 export type AuthTokens = {
   accessToken?: string;
   refreshToken?: string;
-  [k: string]: unknown; 
+  [k: string]: unknown;
 };
 
 export async function signUp(payload: SignUpPayload) {
-  const { data } = await api.post("/auth/signup", payload);
-  return data; // บางระบบคืน user, message ฯลฯ
+  const clean: SignUpPayload = {
+    username: payload.username.trim(),
+    password: payload.password,
+    company: {
+      name: payload.company.name.trim(),
+      contactEmail: payload.company.contactEmail.trim(),
+      contactPhone: payload.company.contactPhone.trim(),
+    },
+  };
+  const { data } = await api.post("/auth/signup", clean);
+  return data;
 }
 
 export async function signIn(payload: SignInPayload) {
