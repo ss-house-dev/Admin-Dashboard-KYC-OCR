@@ -11,7 +11,7 @@ export type SignUpPayload = {
 };
 
 export type SignInPayload = {
-  loginId: string;
+  username: string;
   password: string;
 };
 
@@ -34,14 +34,18 @@ export async function signUp(payload: SignUpPayload) {
   const { data } = await api.post("/auth/signup", clean);
   return data;
 }
-
-export async function signIn(payload: SignInPayload) {
-  const { data } = await api.post("/auth/signin", payload);
-  return data as AuthTokens;
+export async function signIn(body: SignInPayload) {
+  const { data } = await api.post("/auth/signin", {
+    username: body.username,
+    password: body.password,
+  });
+  return data;
 }
 
 export function persistTokens(tokens: AuthTokens) {
   if (typeof window === "undefined") return;
-  if (tokens.accessToken) localStorage.setItem("accessToken", tokens.accessToken);
-  if (tokens.refreshToken) localStorage.setItem("refreshToken", tokens.refreshToken);
+  if (tokens.accessToken)
+    localStorage.setItem("accessToken", tokens.accessToken);
+  if (tokens.refreshToken)
+    localStorage.setItem("refreshToken", tokens.refreshToken);
 }
