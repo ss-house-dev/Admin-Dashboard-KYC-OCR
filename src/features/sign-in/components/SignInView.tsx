@@ -3,7 +3,7 @@
 import Image from "next/image";
 import { useState } from "react";
 import type { FieldErrors, UseFormRegister } from "react-hook-form";
-import type { SignInValues } from "../containers/SignInContainer";
+import type { SignInValues } from "../schemas/signIn";
 import TextField from "@/features/sign-up/components/TextField";
 import PasswordField from "@/features/sign-up/components/PasswordField";
 import { cn } from "@/lib/utils";
@@ -49,8 +49,8 @@ export default function SignInView({
             <TextField
               label="Username"
               placeholder="Enter your Username"
-              registration={register("loginId")}
-              error={errors.loginId?.message as string | undefined}
+              registration={register("username")}
+              error={errors.username?.message as string | undefined}
               autoComplete="username"
               inputClassName=""
             />
