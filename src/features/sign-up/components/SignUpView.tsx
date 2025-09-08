@@ -76,13 +76,7 @@ export default function SignUpView({
               autoComplete="tel"
               inputClassName="py-2.5"
             />
-            <TextField
-              label="Business type/Industry"
-              placeholder="Enter your business type/industry"
-              registration={register("businessType")}
-              error={errors.businessType?.message as string | undefined}
-              inputClassName="py-2.5"
-            />
+
             <TextField
               label="Username"
               placeholder="Create your username"

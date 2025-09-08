@@ -18,7 +18,6 @@ export default function SignUpContainer() {
       companyName: "",
       companyEmail: "",
       companyTel: "",
-      businessType: "",
       username: "",
       password: "",
       confirmPassword: "",
