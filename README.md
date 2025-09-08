@@ -13,6 +13,8 @@ pnpm add react-hook-form zod @hookform/resolvers
 
 pnpm add @tanstack/react-query
 
+pnpm add sonner
+
 
 
 
