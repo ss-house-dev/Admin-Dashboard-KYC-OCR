@@ -7,7 +7,6 @@ import { cn } from "@/lib/utils";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 
-// ...imports เดิม
 type Props = InputHTMLAttributes<HTMLInputElement> & {
   label: React.ReactNode;
   helpText?: React.ReactNode;
@@ -26,7 +25,7 @@ export default function TextField({
   inputClassName,
   labelClassName,
   id,
-  name, // <- เผื่อส่ง name มาตรง ๆ
+  name, 
   ...rest
 }: Props) {
   // ใช้ชื่อฟิลด์เป็นฐาน id ที่ deterministic

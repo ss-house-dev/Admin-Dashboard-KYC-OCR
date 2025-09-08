@@ -1,14 +1,13 @@
-// src/features/sign-up/containers/SignUpContainer.tsx
 "use client";
 
 import { useRouter } from "next/navigation";
 import { useForm, type SubmitErrorHandler } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import type { AxiosError } from "axios";
-import SignUpView from "../components/SignUpView";               // ✅ ใส่ให้ครบ
+import SignUpView from "../components/SignUpView";              
 import { useSignUpAndAutoLogin } from "../hooks";
 import { handleSignUpServerError } from "../services/errorMap";
-import { SignUpSchema, type SignUpValues } from "../schemas/signUp"; // ✅ เปลี่ยนแหล่ง import
+import { SignUpSchema, type SignUpValues } from "../schemas/signUp"; 
 
 export default function SignUpContainer() {
   const router = useRouter();

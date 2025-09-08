@@ -100,7 +100,7 @@ export default function SignInView({
         </div>
       </div>
 
-      {/* ขวา: โลโก้/พื้นหลัง แบบเดียวกับ Sign Up */}
+      {/* ขวา: โลโก้/พื้นหลัง */}
       <div className="relative hidden items-center justify-center lg:flex">
         <div className="absolute inset-0 bg-gradient-to-br from-blue-500  to-blue-950" />
         <div className="relative z-10 flex w-full items-center justify-center">

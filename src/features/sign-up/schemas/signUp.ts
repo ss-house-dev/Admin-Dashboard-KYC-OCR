@@ -1,4 +1,3 @@
-// src/features/sign-up/schemas/signUp.ts
 import { z } from "zod";
 
 // Username: อังกฤษ/ตัวเลข 6–50
