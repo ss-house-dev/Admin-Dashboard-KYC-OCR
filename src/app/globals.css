@@ -3,6 +3,17 @@
 
 @custom-variant dark (&:is(.dark *));
 
+@layer utilities {
+  .no-native-eye::-ms-reveal,
+  .no-native-eye::-ms-clear {
+    display: none;
+  }
+
+  .no-native-eye::-webkit-textfield-decoration-container {
+    display: none;
+  }
+}
+
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
