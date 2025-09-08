@@ -3,9 +3,10 @@
 import Image from "next/image";
 import { useState } from "react";
 import type { FieldErrors, UseFormRegister } from "react-hook-form";
-import type { SignUpValues } from "../containers/SignUpContainer";
+import type { SignUpValues } from "../schemas/signUp";
 import TextField from "./TextField";
 import PasswordField from "./PasswordField";
+import { cn } from "@/lib/utils";
 
 type Props = {
   register: UseFormRegister<SignUpValues>;
@@ -27,15 +28,13 @@ export default function SignUpView({
   const formId = "sign-up-form";
 
   return (
-    <div className="grid h-dvh grid-cols-1 lg:grid-cols-2">
+    <div className="grid h-dvh grid-cols-1 lg:grid-cols-2 bg-[#F8F8F8]">
       {/* ซ้าย: การ์ดแบ่ง 3 แถว */}
       <div className="flex items-center justify-center bg-gradient-to-b from-white to-gray-50">
         <div
-          className="
-            w-full max-w-[420px] rounded-2xl border border-gray-200 bg-white
-            shadow-sm p-5 sm:p-6
-            grid grid-rows-[auto,1fr,auto] h-[min(92dvh,700px)] min-h-[560px]
-          "
+          className={cn(
+            "w-full max-w-[420px] rounded-2xl border border-gray-200 bg-white shadow-sm p-5 sm:p-6 grid grid-rows-[auto,1fr,auto] h-[min(92dvh,700px)] min-h-[560px]"
+          )}
         >
           {/* แถว 1: หัวเรื่อง */}
           <div className="mb-2 text-center">
@@ -86,21 +85,25 @@ export default function SignUpView({
             />
             <TextField
               label="Username"
-              placeholder="อังกฤษ/ตัวเลข 6–50 ตัว"
+              placeholder="Create your username"
+              helpText="(6-50 characters, letters and numbers only, no spaces or special symbols.) "
               registration={register("username")}
               error={errors.username?.message as string | undefined}
               autoComplete="username"
               inputClassName="py-2.5"
+              labelClassName="pb-0 mb-1"
             />
             <PasswordField
               label="Password"
               placeholder="Enter your password"
+              helpText="(8–50 chars, 1 uppercase, 1 special, English only.) "
               registration={register("password")}
               error={errors.password?.message as string | undefined}
               show={showPw}
               onToggleShow={() => setShowPw((s) => !s)}
               autoComplete="new-password"
               inputClassName="py-2.5"
+              labelClassName="pb-0 mb-1"
             />
             <PasswordField
               label="Confirm Password"
@@ -118,7 +121,7 @@ export default function SignUpView({
           <div className="pt-2">
             <button
               type="submit"
-              form={formId} 
+              form={formId}
               disabled={isSubmitting}
               className="w-full rounded-lg bg-gradient-to-r from-blue-500 to-blue-700 py-2.5 text-white shadow transition-opacity disabled:opacity-60"
             >
