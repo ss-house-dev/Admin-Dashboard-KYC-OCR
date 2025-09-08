@@ -71,7 +71,6 @@ export default function PasswordField({
           className="absolute inset-y-0 right-0 mr-2 grid w-9 place-items-center rounded-lg text-gray-500 hover:text-gray-700"
           aria-label={show ? "Hide password" : "Show password"}
         >
-          {/* ...svg เดิม */}
         </button>
       </div>
 

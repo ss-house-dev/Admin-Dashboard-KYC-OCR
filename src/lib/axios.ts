@@ -1,5 +1,4 @@
 import axios from "axios";
-import React, { useEffect, useState } from "react";
 
 export const api = axios.create({
   baseURL: process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://141.11.156.52:3203",

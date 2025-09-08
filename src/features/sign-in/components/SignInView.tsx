@@ -26,7 +26,7 @@ export default function SignInView({
   const [showPw, setShowPw] = useState(false);
 
   return (
-    <div className="grid h-full grid-cols-1 overflow-hidden lg:grid-cols-2 bd-[##F8F8F8]">
+    <div className="grid h-full grid-cols-1 overflow-hidden lg:grid-cols-2 bg-[#F8F8F8]">
       <div className="flex h-full items-center justify-center bg-gradient-to-b from-white to-gray-50">
         <div
           className={cn(

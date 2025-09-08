@@ -85,7 +85,7 @@ export default function SignUpView({
             />
             <TextField
               label="Username"
-              placeholder="Creat your username"
+              placeholder="Create your username"
               helpText="(6-50 characters, letters and numbers only, no spaces or special symbols.) "
               registration={register("username")}
               error={errors.username?.message as string | undefined}

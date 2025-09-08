@@ -44,7 +44,6 @@ export function mapServerFieldToForm<T extends FieldValues>(
 }
 
 // ดึงรายการ error ออกมาจาก payload รูปแบบต่าง ๆ
-// src/features/sign-up/services/errorMap.ts (เฉพาะส่วน extractErrorEntries)
 function extractErrorEntries(
   data: any
 ): Array<{ field?: string | string[]; message: string }> {
