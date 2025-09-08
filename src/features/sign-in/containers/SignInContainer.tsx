@@ -1,50 +1,78 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useForm } from "react-hook-form";
-import { z } from "zod";
+import { useForm, type SubmitErrorHandler } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import type { AxiosError } from "axios";
 import SignInView from "../components/SignInView";
-
-// อีเมลหรือยูสเซอร์เนมก็ได้
-const usernameRegex = /^[A-Za-z0-9]{6,50}$/; // อังกฤษ/ตัวเลข 6–50
-const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/; // อีเมลพื้นฐาน
-
-const SignInSchema = z.object({
-  loginId: z
-    .string()
-    .trim()
-    .min(1, "กรุณากรอกอีเมลหรือชื่อผู้ใช้")
-    .refine((v) => emailRegex.test(v) || usernameRegex.test(v), {
-      message: "ใส่อีเมลที่ถูกต้อง หรือชื่อผู้ใช้ 6–50 ตัว (อังกฤษ/ตัวเลข)",
-    }),
-  password: z.string().min(8, "รหัสผ่านอย่างน้อย 8 ตัว").max(50),
-});
-
-export type SignInValues = z.infer<typeof SignInSchema>;
+import { useSignIn } from "../hooks";
+import { SignInSchema, type SignInValues } from "../schemas/signIn";
 
 export default function SignInContainer() {
   const router = useRouter();
-
   const form = useForm<SignInValues>({
     resolver: zodResolver(SignInSchema),
     mode: "onTouched",
-    defaultValues: { loginId: "", password: "" },
+    defaultValues: { username: "", password: "" },
   });
 
+  const signInMut = useSignIn();
+
   const onValid = async (values: SignInValues) => {
-    // เรียก API เข้าสู่ระบบ
-    // await api.signIn(values);
-    await new Promise((r) => setTimeout(r, 500)); // mock
-    router.push("/"); // แดชบอร์ด
+    form.clearErrors();
+
+    try {
+      await signInMut.mutateAsync({
+        username: values.username,
+        password: values.password,
+      });
+      router.replace("/admin-dashboard");
+    } catch (e) {
+      const err = e as AxiosError<any>;
+      const status = err.response?.status;
+      const message = String(err.response?.data?.message ?? "Login failed");
+
+      // แม็ปให้ลงช่องถูกต้อง (ใช้เฉพาะ username)
+      if (status === 401) {
+        form.setError("password", {
+          type: "server",
+          message: "Username or password is incorrect.",
+        });
+        return;
+      }
+      if (status === 404) {
+        form.setError("username", {
+          type: "server",
+          message: "User account not found",
+        });
+        return;
+      }
+      if (status === 400) {
+        if (/user(name)?/i.test(message)) {
+          form.setError("username", { type: "server", message });
+          return;
+        }
+        if (/password/i.test(message)) {
+          form.setError("password", { type: "server", message });
+          return;
+        }
+      }
+
+      alert(message);
+    }
+  };
+
+  const onInvalid: SubmitErrorHandler<SignInValues> = (errors) => {
+    const first = Object.keys(errors)[0] as keyof SignInValues | undefined;
+    if (first) form.setFocus(first);
   };
 
   return (
     <SignInView
       register={form.register}
       errors={form.formState.errors}
-      isSubmitting={form.formState.isSubmitting}
-      onSubmit={form.handleSubmit(onValid)}
+      isSubmitting={signInMut.isPending}
+      onSubmit={form.handleSubmit(onValid, onInvalid)}
       onGoSignUp={() => router.push("/sign-up")}
     />
   );
