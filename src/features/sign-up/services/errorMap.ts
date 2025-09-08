@@ -25,12 +25,6 @@ export function mapServerFieldToForm<T extends FieldValues>(
     return "companyTel" as Path<T>;
   if (key.endsWith(".name") || key === "companyname")
     return "companyName" as Path<T>;
-  if (
-    key.includes("business") ||
-    key.includes("industry") ||
-    key === "businesstype"
-  )
-    return "businessType" as Path<T>;
 
   // user / auth
   if (key === "username" || key.endsWith(".username"))
@@ -141,10 +135,6 @@ export function handleSignUpServerError<T extends FieldValues>(
     }
     if (/company.*name/i.test(msg)) {
       setError("companyName" as Path<T>, { type: "server", message: msg });
-      return;
-    }
-    if (/business|industry/i.test(msg)) {
-      setError("businessType" as Path<T>, { type: "server", message: msg });
       return;
     }
     if (/password/i.test(msg)) {
