@@ -26,7 +26,7 @@ export default function SignInView({
   const [showPw, setShowPw] = useState(false);
 
   return (
-    <div className="grid h-full grid-cols-1 overflow-hidden lg:grid-cols-2 bd-[##F8F8F8]">
+    <div className="grid h-full grid-cols-1 overflow-hidden lg:grid-cols-2 bg-[#F8F8F8]">
       <div className="flex h-full items-center justify-center bg-gradient-to-b from-white to-gray-50">
         <div
           className={cn(
@@ -100,7 +100,7 @@ export default function SignInView({
         </div>
       </div>
 
-      {/* ขวา: โลโก้/พื้นหลัง แบบเดียวกับ Sign Up */}
+      {/* ขวา: โลโก้/พื้นหลัง */}
       <div className="relative hidden items-center justify-center lg:flex">
         <div className="absolute inset-0 bg-gradient-to-br from-blue-500  to-blue-950" />
         <div className="relative z-10 flex w-full items-center justify-center">
