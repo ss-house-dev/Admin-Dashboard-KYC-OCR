@@ -15,6 +15,8 @@ pnpm add @tanstack/react-query
 
 pnpm add sonner
 
+pnpm add next-auth
+
 
 
 
