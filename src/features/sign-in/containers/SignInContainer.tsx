@@ -1,3 +1,4 @@
+// src/features/sign-in/containers/SignInContainer.tsx
 "use client";
 
 import { useRouter } from "next/navigation";
@@ -22,7 +23,7 @@ export default function SignInContainer() {
     const res = await signIn("credentials", {
       username: values.username,
       password: values.password,
-      redirect: false, // ให้เราคุมการ redirect เอง
+      redirect: false,
     });
 
     if (res?.ok) {
@@ -33,7 +34,7 @@ export default function SignInContainer() {
     const msg = res?.error ?? "Login failed";
     if (/user/i.test(msg)) {
       form.setError("username", { type: "server", message: "User account not found." });
-    } else if (/credential|password/i.test(msg)) {
+    } else if (/credential|password/i.test(msg) || /invalid/i.test(msg)) {
       form.setError("password", { type: "server", message: "Username or password is incorrect." });
     } else {
       toast.error("Login failed", { description: msg });

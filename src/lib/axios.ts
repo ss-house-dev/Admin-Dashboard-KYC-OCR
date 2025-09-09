@@ -8,7 +8,7 @@ export const api = axios.create({
 });
 
 api.interceptors.request.use(async (config) => {
-  const session = await getSession();          
+  const session = await getSession();
   const token = (session as any)?.accessToken as string | undefined;
   if (token) config.headers.Authorization = `Bearer ${token}`;
   return config;

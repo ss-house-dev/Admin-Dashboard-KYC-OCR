@@ -33,7 +33,6 @@ export default function SignUpContainer() {
     form.clearErrors();
 
     try {
-      // สมัคร
       await signUp({
         username: v.username,
         password: v.password,
@@ -44,7 +43,6 @@ export default function SignUpContainer() {
         },
       });
 
-      // auto login ด้วย next-auth
       const res = await signIn("credentials", {
         username: v.username,
         password: v.password,
@@ -58,15 +56,9 @@ export default function SignUpContainer() {
 
       const msg = res?.error ?? "Login failed";
       if (/user/i.test(msg)) {
-        form.setError("username", {
-          type: "server",
-          message: "User account not found.",
-        });
-      } else if (/credential|password/i.test(msg)) {
-        form.setError("password", {
-          type: "server",
-          message: "Username or password is incorrect.",
-        });
+        form.setError("username", { type: "server", message: "User account not found." });
+      } else if (/credential|password/i.test(msg) || /invalid/i.test(msg)) {
+        form.setError("password", { type: "server", message: "Username or password is incorrect." });
       } else {
         toast.error("Auto login failed", { description: msg });
       }
@@ -75,9 +67,7 @@ export default function SignUpContainer() {
         e as AxiosError<ApiErrorResponse>,
         (name, err) => form.setError(name, err)
       );
-      const first = Object.keys(form.formState.errors)[0] as
-        | keyof SignUpValues
-        | undefined;
+      const first = Object.keys(form.formState.errors)[0] as keyof SignUpValues | undefined;
       if (first) form.setFocus(first);
     }
   };
