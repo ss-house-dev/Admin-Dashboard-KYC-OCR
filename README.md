@@ -17,6 +17,11 @@ pnpm add sonner
 
 pnpm add next-auth
 
+pnpm add -D eslint-plugin-react-hooks eslint-plugin-react @typescript-eslint/eslint-plugin @typescript-eslint/parser
+
+pnpm add -D @next/eslint-plugin-next eslint-plugin-react-hooks eslint-plugin-react @typescript-eslint/parser @typescript-eslint/eslint-plugin
+
+
 
 
 

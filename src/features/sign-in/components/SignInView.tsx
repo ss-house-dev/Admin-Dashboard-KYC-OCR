@@ -41,7 +41,7 @@ export default function SignInView({
               Sign In
             </h1>
             <p className="mt-2 text-[14px] leading-4 text-gray-500">
-              Let's verify your identity
+              Let&apos;s verify your identity
             </p>
           </div>
           {/* ฟิลด์ */}
@@ -87,7 +87,7 @@ export default function SignInView({
             </button>
 
             <p className="mt-4 text-center text-xs  text-black">
-              Don't have an account?{" "}
+              Don&apos;t have an account?{" "}
               <button
                 type="button"
                 onClick={onGoSignUp}
