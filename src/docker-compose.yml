@@ -3,12 +3,16 @@ services:
     image: gumon.dev/ss-house/admin-aashboard-kyc-ocr:0.1.0
     container_name: admin-aashboard-kyc-ocr
     ports:
-      - "80:3401"   
+      - "80:3399"
     environment:
       NODE_ENV: production
     restart: unless-stopped
     healthcheck:
-      test: ["CMD-SHELL", "node -e \"require('http').get('http://localhost:'+ (process.env.PORT||3401), r=>process.exit(r.statusCode===200?0:1)).on('error',()=>process.exit(1))\""]
+      test:
+        [
+          "CMD-SHELL",
+          'node -e "require(''http'').get(''http://localhost:''+ (process.env.PORT||3399), r=>process.exit(r.statusCode===200?0:1)).on(''error'',()=>process.exit(1))"',
+        ]
       interval: 30s
       timeout: 5s
       retries: 3
