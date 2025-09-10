@@ -47,7 +47,7 @@ export default function PasswordField({
       </Label>
 
       {helpText && (
-        <p id={descId} className="mb-1 text-[10px] leading-4 text-gray-500">
+        <p id={descId} className="mb-1 text-[10px] leading-4 text-black">
           {helpText}
         </p>
       )}
