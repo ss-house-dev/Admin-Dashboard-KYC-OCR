@@ -15,15 +15,7 @@ export const SignUpSchema = z
     companyTel: z
       .string()
       .trim()
-      .min(1, "Please enter the company phone number.")
-      .regex(/^[0-9+()\-\s]+$/, "Use numbers, +, (), -, and spaces only.")
-      .refine(
-        (v) => {
-          const d = v.replace(/\D/g, "");
-          return d.length >= 8 && d.length <= 15;
-        },
-        { message: "The phone number should be 8-15 digits long." }
-      ),
+      .regex(/^\d{8,15}$/, "Phone number must be digits only (8-15 digits)."),
     username: z
       .string()
       .regex(
@@ -45,7 +37,7 @@ export const SignUpSchema = z
   })
   .refine((v) => v.password === v.confirmPassword, {
     path: ["confirmPassword"],
-    message: "	Passwords do not match.",
+    message: "Passwords do not match.",
   });
 
 export type SignUpValues = z.infer<typeof SignUpSchema>;
