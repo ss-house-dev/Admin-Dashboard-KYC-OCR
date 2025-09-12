@@ -3,7 +3,9 @@ services:
     image: gumon.dev/ss-house/admin-dashboard-kyc-ocr:0.1.0
     container_name: admin-aashboard-kyc-ocr
     ports:
-      - "80:3399"
+      - "3399:3399"
+    env_file:
+      - .env
     environment:
       NODE_ENV: production
     restart: unless-stopped
