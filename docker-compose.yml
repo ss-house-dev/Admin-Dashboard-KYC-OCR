@@ -12,6 +12,8 @@ services:
     environment:
       NODE_ENV: production
       PORT: 3399
+      NEXTAUTH_URL: "http://141.11.156.52:3399"
+      NEXTAUTH_SECRET: "bcd2e344a2a1987951bf6e9fad6f90a5e305551caedff8dbac09c8108c37f33e"
     restart: unless-stopped
     healthcheck:
       test:
