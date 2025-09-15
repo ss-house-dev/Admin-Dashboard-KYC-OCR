@@ -22,7 +22,7 @@ pnpm add -D eslint-plugin-react-hooks eslint-plugin-react @typescript-eslint/esl
 pnpm add -D @next/eslint-plugin-next eslint-plugin-react-hooks eslint-plugin-react @typescript-eslint/parser @typescript-eslint/eslint-plugin
 
 ติดตั้ง Storybook ในโปรเจกต์ Next (14/9/68)
-npm create storybook@latest -- --type nextjs --package-manager=pnpm
+pnpm create storybook@latest -- --type nextjs --package-manager=pnpm
 
 สลับมาใช้ @storybook/nextjs-vite ที่ไวกว่า
 pnpm add -D @storybook/nextjs-vite
