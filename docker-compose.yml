@@ -1,19 +1,23 @@
 services:
   web:
-    image: gumon.dev/ss-house/admin-dashboard-kyc-ocr:0.1.1
-    container_name: admin-aashboard-kyc-ocr
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        NEXT_PUBLIC_API_BASE_URL: "http://141.11.156.52:3203"
+        NEXTAUTH_URL: "http://141.11.156.52:3399"
+    container_name: admin-dashboard-kyc-ocr
     ports:
       - "3399:3399"
-    env_file:
-      - .env
     environment:
       NODE_ENV: production
+      PORT: 3399
     restart: unless-stopped
     healthcheck:
       test:
         [
           "CMD-SHELL",
-          'node -e "require(''http'').get(''http://localhost:''+ (process.env.PORT||3399), r=>process.exit(r.statusCode===200?0:1)).on(''error'',()=>process.exit(1))"',
+          'node -e "require(''http'').get(''http://localhost:''+(process.env.PORT||3399), r=>process.exit(r.statusCode===200?0:1)).on(''error'',()=>process.exit(1))"',
         ]
       interval: 30s
       timeout: 5s
