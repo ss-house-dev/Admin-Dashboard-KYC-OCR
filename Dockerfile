@@ -34,4 +34,5 @@ COPY --from=builder /app/package.json ./package.json
 COPY --from=builder /app/pnpm-lock.yaml ./pnpm-lock.yaml
 
 EXPOSE 3399
-CMD ["pnpm", "start", "--", "-p", "3399"]
+ENV PORT=3399
+CMD ["pnpm", "start"]
