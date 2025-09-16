@@ -11,14 +11,12 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
-  SidebarRail,
   SidebarTrigger,
 } from "@/components/ui/sidebar";
 import Image from "next/image";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { useSidebar } from "@/components/ui/sidebar";
 
 // Menu items.
 const items = [
@@ -50,7 +48,6 @@ const secondaryItems = [
 ];
 
 export function AppSidebar() {
-  const { state, open, setOpen, toggleSidebar } = useSidebar();
   return (
     <Sidebar className="h-full border-r bg-white p-0" collapsible="icon">
       <SidebarTrigger

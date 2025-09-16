@@ -1,6 +1,6 @@
 import { cookies } from "next/headers"
 
-import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar"
+import { SidebarProvider } from "@/components/ui/sidebar"
 import { AppSidebar } from "@/features/dashboard-admin/components/app-sidebar"
 
 export default async function Layout({ children }: { children: React.ReactNode }) {
@@ -11,7 +11,6 @@ export default async function Layout({ children }: { children: React.ReactNode }
     <SidebarProvider defaultOpen={defaultOpen}>
       <AppSidebar />
       <main>
-        {/* <SidebarTrigger /> */}
         {children}
       </main>
     </SidebarProvider>
