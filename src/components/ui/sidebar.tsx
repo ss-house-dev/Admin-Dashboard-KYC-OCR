@@ -268,7 +268,7 @@ function SidebarTrigger({
       size="icon"
       className={cn(
         "absolute top-5 right-0 translate-x-1/2 z-30 hidden md:flex ",
-        "rounded-full border bg-white shadow flex items-center justify-center",
+        "rounded-full border bg-white flex items-center justify-center",
         "hover:bg-gray-100",
         className
       )}

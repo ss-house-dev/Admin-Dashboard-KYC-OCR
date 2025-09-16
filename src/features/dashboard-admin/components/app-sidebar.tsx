@@ -1,6 +1,6 @@
 "use client";
 
-import { Calendar, Inbox, Bell, Settings, ChevronRight } from "lucide-react";
+import { Bell, Settings, ChevronRight, LayoutDashboard, ArrowDownWideNarrow } from "lucide-react";
 import {
   Sidebar,
   SidebarHeader,
@@ -17,19 +17,20 @@ import Image from "next/image";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { calibri } from "@/app/font"
 
 // Menu items.
 const items = [
   {
     title: "Verification",
     url: "#",
-    icon: Calendar, //เปลี่ยนไอคอนให้ตรง design
+    icon: ArrowDownWideNarrow, //เปลี่ยนไอคอนให้ตรง design
     active: true,
   },
   {
     title: "Dashboard",
     url: "#",
-    icon: Inbox, //เปลี่ยนไอคอนให้ตรง design
+    icon: LayoutDashboard, //เปลี่ยนไอคอนให้ตรง design
     active: false,
   },
 ];
@@ -66,8 +67,8 @@ export function AppSidebar() {
             height={32}
             alt="Picture of the author"
           />
-          <span className="text-xl font-bold text-blue-600 group-data-[collapsible=icon]:hidden">
-            Kyra KYC
+          <span className="calibri.className text-xl font-bold text-blue-600 group-data-[collapsible=icon]:hidden">
+            Kyra
           </span>
         </div>
       </SidebarHeader>

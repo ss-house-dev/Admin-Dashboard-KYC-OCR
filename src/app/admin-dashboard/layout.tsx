@@ -1,18 +1,22 @@
-import { cookies } from "next/headers"
+import { cookies } from "next/headers";
 
-import { SidebarProvider } from "@/components/ui/sidebar"
-import { AppSidebar } from "@/features/dashboard-admin/components/app-sidebar"
+import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
+import { AppSidebar } from "@/features/dashboard-admin/components/app-sidebar";
 
-export default async function Layout({ children }: { children: React.ReactNode }) {
-    const cookieStore = await cookies()
-  const defaultOpen = cookieStore.get("sidebar_state")?.value === "true"
+export default async function Layout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  const cookieStore = await cookies();
+  const defaultOpen = cookieStore.get("sidebar_state")?.value === "true";
 
   return (
     <SidebarProvider defaultOpen={defaultOpen}>
       <AppSidebar />
-      <main>
+      <SidebarInset className="w-full min-h-svh">
         {children}
-      </main>
+      </SidebarInset>
     </SidebarProvider>
-  )
+  );
 }
