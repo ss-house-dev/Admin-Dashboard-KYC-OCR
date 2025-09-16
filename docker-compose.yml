@@ -3,15 +3,13 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-      args:
-        NEXT_PUBLIC_API_BASE_URL: "/"
-        NEXTAUTH_URL: "http://141.11.156.52:3399"
     container_name: admin-dashboard-kyc-ocr
     ports:
       - "3399:3399"
     environment:
       NODE_ENV: production
       PORT: 3399
+      API_BASE_INTERNAL: "http://141.11.156.52:3203"
       NEXTAUTH_URL: "https://141.11.156.52:3399"
       NEXTAUTH_SECRET: "bcd2e344a2a1987951bf6e9fad6f90a5e305551caedff8dbac09c8108c37f33e"
     restart: unless-stopped

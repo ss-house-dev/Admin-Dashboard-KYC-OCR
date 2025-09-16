@@ -8,19 +8,17 @@ export const api = axios.create({
   timeout: 15000,
 });
 
-api.interceptors.request.use(async (config: InternalAxiosRequestConfig) => {
+api.interceptors.request.use(async (config) => {
+  if (config.url?.startsWith("/auth/")) return config;
   const session = (await getSession()) as Session | null;
   const token = session?.accessToken;
-
   if (token) {
     const headers =
       config.headers instanceof AxiosHeaders
         ? config.headers
         : new AxiosHeaders(config.headers);
-
     headers.set("Authorization", `Bearer ${token}`);
     config.headers = headers;
   }
-
   return config;
 });

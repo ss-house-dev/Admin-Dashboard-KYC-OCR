@@ -1,5 +1,9 @@
+// src/app/api/auth/[...nextauth]/route.ts
 import NextAuth, { type NextAuthOptions } from "next-auth";
 import Credentials from "next-auth/providers/credentials";
+
+const API_BASE_INTERNAL =
+  process.env.API_BASE_INTERNAL || "http://141.11.156.52:3203"; // << ใช้ base ฝั่งเซิร์ฟเวอร์เท่านั้น
 
 type SignInSuccess = {
   id: string;
@@ -24,17 +28,22 @@ export const authOptions: NextAuthOptions = {
         const username = String(creds?.username ?? "");
         const password = String(creds?.password ?? "");
 
-        const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/auth/signin`, {
+        const url = new URL("/auth/signin", API_BASE_INTERNAL).toString();
+
+        const res = await fetch(url, {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: { "Content-Type": "application/json", accept: "application/json" },
           body: JSON.stringify({ username, password }),
         });
 
-        const data = (await res.json().catch(() => null)) as unknown;
+        const text = await res.text();
+        const data = (() => { try { return JSON.parse(text); } catch { return null; } })();
 
         if (!res.ok || !data || typeof data !== "object") {
-          const msg = (data as { message?: string } | null)?.message
-            ?? (res.status === 401 ? "Invalid credentials" : `HTTP ${res.status}`);
+          const msg =
+            (data as any)?.message ??
+            (res.status === 401 ? "Invalid credentials" : `HTTP ${res.status}`);
+
           throw new Error(msg);
         }
 
@@ -64,26 +73,23 @@ export const authOptions: NextAuthOptions = {
       if (user) {
         const u = user as unknown as SignInSuccess;
         token.name = u.name ?? token.name;
-        (token as { id?: string }).id = u.id;
-        (token as { role?: string }).role = u.role;
-        (token as { accessToken?: string }).accessToken = u.accessToken;
-        (token as { refreshToken?: string }).refreshToken = u.refreshToken;
-        (token as { accessTokenExpires?: number }).accessTokenExpires =
-          Date.now() + ((u.expiresIn ?? 900) * 1000);
+        (token as any).id = u.id;
+        (token as any).role = u.role;
+        (token as any).accessToken = u.accessToken;
+        (token as any).refreshToken = u.refreshToken;
+        (token as any).accessTokenExpires = Date.now() + ((u.expiresIn ?? 900) * 1000);
       }
       return token;
     },
     async session({ session, token }) {
       session.user = {
         ...session.user,
-        id: (token as { id?: string }).id,
+        id: (token as any).id,
         name: token.name,
-        role: (token as { role?: string }).role,
+        role: (token as any).role,
       };
-      (session as { accessToken?: string }).accessToken =
-        (token as { accessToken?: string }).accessToken;
-      (session as { refreshToken?: string }).refreshToken =
-        (token as { refreshToken?: string }).refreshToken;
+      (session as any).accessToken = (token as any).accessToken;
+      (session as any).refreshToken = (token as any).refreshToken;
       return session;
     },
   },
