@@ -44,6 +44,8 @@ export function FilterView({
   const [openStart, setOpenStart] = React.useState(false);
   const [openEnd, setOpenEnd] = React.useState(false);
 
+  const fmtDisplay = (d?: Date) => (d ? d.toLocaleDateString() : undefined)
+
   return (
     <div className="mt-4 flex flex-wrap items-end gap-4">
       {/* Status */}
@@ -105,16 +107,18 @@ export function FilterView({
 
           {/* End Date */}
           <Popover
-            open={openEnd}
+            open={!!start && openEnd}                 
             onOpenChange={(o) => {
-              setOpenEnd(o);
-              if (o) setOpenStart(false);
+              if (!start) return                      
+              setOpenEnd(o)
+              if (o) setOpenStart(false)
             }}
           >
             <PopoverTrigger asChild>
               <Button
                 variant="outline"
                 className="w-[152px] justify-between font-normal rounded-md text-[#666666] border-[#E5E7EB]"
+                disabled={!start} 
               >
                 {fmtDisplay(end) ?? "End Date"}
                 <CalendarIcon className="ml-2 h-4 w-4 opacity-70" />
