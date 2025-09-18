@@ -38,7 +38,7 @@ export default function SignUpView({
         >
           {/* แถว 1: หัวเรื่อง */}
           <div className="mb-2 text-center">
-            <h1 className="text-xl font-semibold text-gray-900">Sign Up</h1>
+            <h1 className="text-xl font-semibold text-gray-900">Register</h1>
             <p className="mt-0.5 text-xs text-gray-500">
               Enter details to create your account
             </p>
@@ -87,10 +87,11 @@ export default function SignUpView({
               inputClassName="py-2.5"
               labelClassName="pb-0 mb-1"
             />
+            
             <PasswordField
               label="Password"
               placeholder="Enter your password"
-              helpText="(8–50 chars, 1 uppercase, 1 special, English only.) "
+              helpText="(8-50 chars, 1 uppercase, 1 special, English only.) "
               registration={register("password")}
               error={errors.password?.message as string | undefined}
               show={showPw}
@@ -119,7 +120,7 @@ export default function SignUpView({
               disabled={isSubmitting}
               className="w-full rounded-lg bg-gradient-to-r from-blue-500 to-blue-700 py-2.5 text-white shadow transition-opacity disabled:opacity-60"
             >
-              {isSubmitting ? "Submitting..." : "Sign up"}
+              {isSubmitting ? "Submitting..." : "Register"}
             </button>
             <p className="mt-2 text-center text-xs text-gray-600">
               Already have an account?{" "}
