@@ -125,8 +125,8 @@ export const authOptions: NextAuthOptions = {
         name: s.user?.name ?? t.name ?? null,
         role: t.role,
       };
-      s.accessToken = t.accessToken;
-      s.refreshToken = t.refreshToken;
+      // s.accessToken = t.accessToken;
+      // s.refreshToken = t.refreshToken;
       return s;
     },
   },
