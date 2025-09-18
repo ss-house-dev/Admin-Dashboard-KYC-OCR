@@ -5,6 +5,15 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { X } from "lucide-react";
 
+interface DetailData {
+  transactionNo: string;
+  name: string;
+  email: string;
+  submissionDate: string;
+  submissionTime: string;
+  status: string;
+}
+
 export default function DetailView({
   open,
   onClose,
@@ -15,14 +24,13 @@ export default function DetailView({
   open: boolean;
   onClose: () => void;
   width?: number;
-  data: any;
+  data?: DetailData;
   className?: string;
 }) {
-  if (!open) return null; // ซ่อนไปเลยเมื่อปิด (กริดจะเหลือ 1 คอลัมน์)
+  if (!open) return null;
   return (
     <aside
       className={cn(
-        // อยู่ใน flow ของกริดคอลัมน์ขวา
         "border-l bg-background h-full overflow-auto",
         className
       )}
@@ -54,7 +62,6 @@ export default function DetailView({
                 <span className="text-muted-foreground">Status:</span>{" "}
                 {data.status}
               </div>
-              {/* เติม field เพิ่มได้ */}
             </div>
           ) : (
             <p className="text-sm text-muted-foreground">No selection</p>

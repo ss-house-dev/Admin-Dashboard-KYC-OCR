@@ -3,7 +3,7 @@
 import * as React from "react";
 import { useState } from "react";
 import { columns, Kycrequest } from "../components/column";
-import { DataTable } from "../components/data-table";
+import { DataTable } from "../components/DataTable";
 import { SearchView } from "../components/SearchView";
 import { FilterView } from "../components/FilterView";
 import DetailView from "../components/DetailView";

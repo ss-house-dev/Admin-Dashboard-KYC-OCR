@@ -1,6 +1,12 @@
 "use client";
 
-import { Bell, Settings, ChevronRight, LayoutDashboard, ArrowDownWideNarrow } from "lucide-react";
+import {
+  Bell,
+  Settings,
+  ChevronRight,
+  LayoutDashboard,
+  ArrowDownWideNarrow,
+} from "lucide-react";
 import {
   Sidebar,
   SidebarHeader,
@@ -17,20 +23,20 @@ import Image from "next/image";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { calibri } from "@/app/font"
+import { calibri } from "@/app/font";
 
 // Menu items.
 const items = [
   {
     title: "Verification",
     url: "#",
-    icon: ArrowDownWideNarrow, //เปลี่ยนไอคอนให้ตรง design
+    icon: ArrowDownWideNarrow,
     active: true,
   },
   {
     title: "Dashboard",
     url: "#",
-    icon: LayoutDashboard, //เปลี่ยนไอคอนให้ตรง design
+    icon: LayoutDashboard,
     active: false,
   },
 ];
@@ -52,12 +58,15 @@ export function AppSidebar() {
   return (
     <Sidebar className="h-full border-r bg-white p-0" collapsible="icon">
       <SidebarTrigger
-        className="
-          size-7
-          transition-transform
-          group-data-[state=collapsed]:rotate-180
-          group-data-[side=right]:left-0 group-data-[side=right]:-translate-x-1/2 group-data-[side=right]:right-auto group-data-[side=right]:translate-x-0
-        "
+        className={cn(
+          "size-7",
+          "transition-transform",
+          "group-data-[state=collapsed]:rotate-180",
+          "group-data-[side=right]:left-0",
+          "group-data-[side=right]:-translate-x-1/2",
+          "group-data-[side=right]:right-auto",
+          "group-data-[side=right]:translate-x-0"
+        )}
       />
       <SidebarHeader>
         <div className="flex items-center space-x-2">

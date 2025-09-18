@@ -15,7 +15,6 @@ export function DataTablePagination<TData>({
   const total = table.getPageCount();
   const curr = table.getState().pagination.pageIndex + 1;
 
-  // แสดง ... เมื่อมีมากกว่า 2–3 หน้า
   const getPages = (total: number, curr: number) => {
     const pages: (number | string)[] = [];
     if (total <= 4) {
@@ -52,7 +51,7 @@ export function DataTablePagination<TData>({
         <span className="font-semibold">Previous</span>
       </Button>
 
-      {/* Numbers + Ellipsis (อยู่ตรงกลาง) */}
+      {/* Numbers + Ellipsis */}
       <div className="flex items-center gap-3">
         {pages.map((p, i) =>
           typeof p === "string" ? (

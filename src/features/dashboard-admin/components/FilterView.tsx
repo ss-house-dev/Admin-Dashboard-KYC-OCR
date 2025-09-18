@@ -8,7 +8,6 @@ import {
   SelectContent,
   SelectItem,
   SelectTrigger,
-  SelectValue,
   SelectLabel,
   SelectGroup,
 } from "@/components/ui/select";
@@ -65,7 +64,7 @@ export function FilterView({
   onApply,
   onClear,
 }: Props) {
-  // ✅ เก็บเฉพาะ state "UI" ของ popover ภายใน component นี้
+  // เก็บเฉพาะ state "UI" ของ popover ภายใน component นี้
   const [openStart, setOpenStart] = React.useState(false);
   const [openEnd, setOpenEnd] = React.useState(false);
 
@@ -77,7 +76,7 @@ export function FilterView({
       <div className="flex flex-col">
         <label className="mb-1 text-xs text-gray-500">Status</label>
         <Select value={status} onValueChange={onChangeStatus}>
-          {/* 🔵 Trigger: แสดง dot + label แทน SelectValue */}
+          {/* Trigger: แสดง dot + label แทน SelectValue */}
           <SelectTrigger className="h-10 w-4xs rounded-md border-[#E5E7EB]">
             <div className="flex items-center gap-2">
               {status !== "all" && <Dot color={STATUS_COLOR[status]} />}
@@ -154,7 +153,11 @@ export function FilterView({
             <PopoverTrigger asChild>
               <Button
                 variant="outline"
-                className="w-[152px] justify-between font-normal rounded-md text-[#666666] border-[#E5E7EB]"
+                className={cn(
+                  "w-[152px] rounded-md",
+                  "justify-between font-normal",
+                  "text-[#666666] border-[#E5E7EB]"
+                )}
               >
                 {fmtDisplay(start) ?? "Start Date"}
                 <CalendarIcon className="ml-2 h-4 w-4 opacity-70" />
@@ -190,7 +193,11 @@ export function FilterView({
             <PopoverTrigger asChild>
               <Button
                 variant="outline"
-                className="w-[152px] justify-between font-normal rounded-md text-[#666666] border-[#E5E7EB]"
+                className={cn(
+                  "w-[152px] rounded-md",
+                  "justify-between font-normal",
+                  "text-[#666666] border-[#E5E7EB]"
+                )}
                 disabled={!start}
               >
                 {fmtDisplay(end) ?? "End Date"}
@@ -221,14 +228,20 @@ export function FilterView({
       <div className="flex gap-3">
         <Button
           onClick={onApply}
-          className="h-10 w-[166px] rounded-md bg-blue-600 text-white hover:bg-blue-600/90"
+          className={cn(
+            "w-[166px] rounded-md h-10",
+            "bg-blue-600 text-white hover:bg-blue-600/90"
+          )}
         >
           Apply Filters
         </Button>
         <Button
           variant="outline"
           onClick={onClear}
-          className="h-10 w-[166px] rounded-md text-[#666666] border-[#9CA3AF]"
+          className={cn(
+            "w-[166px] rounded-md h-10",
+            "text-[#666666] border-[#9CA3AF]"
+          )}
         >
           Clear All filter
         </Button>
