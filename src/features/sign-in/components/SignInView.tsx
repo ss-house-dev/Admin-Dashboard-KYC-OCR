@@ -45,7 +45,16 @@ export default function SignInView({
             </p>
           </div>
           {/* ฟิลด์ */}
-          <form onSubmit={onSubmit} className=" mb-5 space-y-2">
+          <form
+            onSubmit={onSubmit}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                e.currentTarget.requestSubmit();
+              }
+            }}
+            className=" mb-5 space-y-2"
+          >
             <TextField
               label="Username"
               placeholder="Enter your Username"
@@ -65,6 +74,12 @@ export default function SignInView({
               autoComplete="current-password"
               inputClassName="mt-2"
             />
+
+            {errors.root?.message && (
+              <p className="text-xs text-red-500 mt-2 ml-0.5" role="alert">
+                {errors.root.message as string}
+              </p>
+            )}
           </form>
           {/* ปุ่มล่าง */}
           <div className="">

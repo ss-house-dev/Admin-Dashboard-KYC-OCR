@@ -1,26 +1,29 @@
-import axios, { AxiosHeaders, type InternalAxiosRequestConfig } from "axios";
+import axios, { AxiosHeaders } from "axios";
 import { getSession } from "next-auth/react";
 import type { Session } from "next-auth";
 
 export const api = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_API_BASE_URL,
+  baseURL: "/",
   headers: { "Content-Type": "application/json" },
   timeout: 15000,
 });
 
-api.interceptors.request.use(async (config: InternalAxiosRequestConfig) => {
-  const session = (await getSession()) as Session | null;
-  const token = session?.accessToken;
+api.interceptors.request.use(
+  async (config /* : InternalAxiosRequestConfig */) => {
+    if (config.url?.startsWith("/auth/")) return config;
 
-  if (token) {
-    const headers =
-      config.headers instanceof AxiosHeaders
-        ? config.headers
-        : new AxiosHeaders(config.headers);
+    const session = (await getSession()) as Session | null;
+    const token = (session as (Session & { accessToken?: string }) | null)
+      ?.accessToken;
 
-    headers.set("Authorization", `Bearer ${token}`);
-    config.headers = headers;
+    if (token) {
+      const headers =
+        config.headers instanceof AxiosHeaders
+          ? config.headers
+          : new AxiosHeaders(config.headers);
+      headers.set("Authorization", `Bearer ${token}`);
+      config.headers = headers;
+    }
+    return config;
   }
-
-  return config;
-});
+);

@@ -1,5 +1,10 @@
 import NextAuth, { type NextAuthOptions } from "next-auth";
 import Credentials from "next-auth/providers/credentials";
+import type { Session } from "next-auth";
+import type { JWT } from "next-auth/jwt";
+
+const API_BASE_INTERNAL =
+  process.env.API_BASE_INTERNAL || "http://141.11.156.52:3203";
 
 type SignInSuccess = {
   id: string;
@@ -9,6 +14,43 @@ type SignInSuccess = {
   refreshToken?: string;
   expiresIn?: number;
 };
+
+type SignInResponse = {
+  user?: { _id?: string; username?: string; role?: string };
+  _id?: string;
+  username?: string;
+  role?: string;
+  accessToken?: string;
+  refreshToken?: string;
+  expiresIn?: number;
+  message?: string;
+};
+
+type AppJWT = JWT & {
+  id?: string;
+  role?: string;
+  accessToken?: string;
+  refreshToken?: string;
+  accessTokenExpires?: number;
+};
+
+type AppSession = Session & {
+  user: {
+    id?: string;
+    name?: string | null;
+    role?: string;
+  };
+  accessToken?: string;
+  refreshToken?: string;
+};
+
+function isObject(v: unknown): v is Record<string, unknown> {
+  return typeof v === "object" && v !== null;
+}
+function getMessage(v: unknown): string | undefined {
+  if (isObject(v) && typeof v.message === "string") return v.message;
+  return undefined;
+}
 
 export const authOptions: NextAuthOptions = {
   pages: { signIn: "/sign-in" },
@@ -24,29 +66,28 @@ export const authOptions: NextAuthOptions = {
         const username = String(creds?.username ?? "");
         const password = String(creds?.password ?? "");
 
-        const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/auth/signin`, {
+        const url = new URL("/auth/signin", API_BASE_INTERNAL).toString();
+
+        const res = await fetch(url, {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: { "Content-Type": "application/json", accept: "application/json" },
           body: JSON.stringify({ username, password }),
         });
 
-        const data = (await res.json().catch(() => null)) as unknown;
+        const text = await res.text();
+        let data: unknown = null;
+        try {
+          data = JSON.parse(text);
+        } catch {
+          // ignore
+        }
 
-        if (!res.ok || !data || typeof data !== "object") {
-          const msg = (data as { message?: string } | null)?.message
-            ?? (res.status === 401 ? "Invalid credentials" : `HTTP ${res.status}`);
+        if (!res.ok || !isObject(data)) {
+          const msg = getMessage(data) ?? (res.status === 401 ? "Invalid credentials" : `HTTP ${res.status}`);
           throw new Error(msg);
         }
 
-        const d = data as {
-          user?: { _id?: string; username?: string; role?: string };
-          _id?: string;
-          username?: string;
-          role?: string;
-          accessToken?: string;
-          refreshToken?: string;
-          expiresIn?: number;
-        };
+        const d = data as SignInResponse;
 
         return {
           id: d.user?._id ?? d._id ?? username,
@@ -61,30 +102,32 @@ export const authOptions: NextAuthOptions = {
   ],
   callbacks: {
     async jwt({ token, user }) {
+      const t = token as AppJWT;
+
       if (user) {
         const u = user as unknown as SignInSuccess;
-        token.name = u.name ?? token.name;
-        (token as { id?: string }).id = u.id;
-        (token as { role?: string }).role = u.role;
-        (token as { accessToken?: string }).accessToken = u.accessToken;
-        (token as { refreshToken?: string }).refreshToken = u.refreshToken;
-        (token as { accessTokenExpires?: number }).accessTokenExpires =
-          Date.now() + ((u.expiresIn ?? 900) * 1000);
+        t.name = u.name ?? t.name ?? null;
+        t.id = u.id;
+        t.role = u.role;
+        t.accessToken = u.accessToken;
+        t.refreshToken = u.refreshToken;
+        t.accessTokenExpires = Date.now() + ((u.expiresIn ?? 900) * 1000);
       }
-      return token;
+      return t;
     },
     async session({ session, token }) {
-      session.user = {
-        ...session.user,
-        id: (token as { id?: string }).id,
-        name: token.name,
-        role: (token as { role?: string }).role,
+      const t = token as AppJWT;
+      const s = session as AppSession;
+
+      s.user = {
+        ...s.user,
+        id: t.id,
+        name: s.user?.name ?? t.name ?? null,
+        role: t.role,
       };
-      (session as { accessToken?: string }).accessToken =
-        (token as { accessToken?: string }).accessToken;
-      (session as { refreshToken?: string }).refreshToken =
-        (token as { refreshToken?: string }).refreshToken;
-      return session;
+      s.accessToken = t.accessToken;
+      s.refreshToken = t.refreshToken;
+      return s;
     },
   },
 };

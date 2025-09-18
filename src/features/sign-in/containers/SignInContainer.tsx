@@ -1,23 +1,21 @@
-// src/features/sign-in/containers/SignInContainer.tsx
 "use client";
 
 import { useRouter } from "next/navigation";
 import { useForm, type SubmitErrorHandler } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
 import { signIn } from "next-auth/react";
-import { toast } from "sonner";
 import SignInView from "../components/SignInView";
-import { SignInSchema, type SignInValues } from "../schemas/signIn";
+
+type FormValues = { username: string; password: string };
 
 export default function SignInContainer() {
   const router = useRouter();
-  const form = useForm<SignInValues>({
-    resolver: zodResolver(SignInSchema),
+
+  const form = useForm<FormValues>({
     mode: "onTouched",
     defaultValues: { username: "", password: "" },
   });
 
-  const onValid = async (values: SignInValues) => {
+  const onValid = async (values: FormValues) => {
     form.clearErrors();
 
     const res = await signIn("credentials", {
@@ -31,18 +29,14 @@ export default function SignInContainer() {
       return;
     }
 
-    const msg = res?.error ?? "Login failed";
-    if (/user/i.test(msg)) {
-      form.setError("username", { type: "server", message: "User account not found." });
-    } else if (/credential|password/i.test(msg) || /invalid/i.test(msg)) {
-      form.setError("password", { type: "server", message: "Username or password is incorrect." });
-    } else {
-      toast.error("Login failed", { description: msg });
-    }
+    form.setError("root", {
+      type: "server",
+      message: "Invalid username or password.",
+    });
   };
 
-  const onInvalid: SubmitErrorHandler<SignInValues> = (errors) => {
-    const first = Object.keys(errors)[0] as keyof SignInValues | undefined;
+  const onInvalid: SubmitErrorHandler<FormValues> = (errors) => {
+    const first = Object.keys(errors)[0] as keyof FormValues | undefined;
     if (first) form.setFocus(first);
   };
 
