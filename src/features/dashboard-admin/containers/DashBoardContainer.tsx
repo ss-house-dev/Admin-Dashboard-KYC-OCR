@@ -100,16 +100,18 @@ export default function DashBoardContainer({
   const [astart, setAstart] = React.useState<Date | undefined>(start);
   const [aend, setAend] = React.useState<Date | undefined>(end);
 
+  type Row = typeof filtered extends Array<infer R> ? R : never;
+
   //Detail
   const [detailOpen, setDetailOpen] = useState(false);
-  const [selected, setSelected] = useState<any | null>(null);
+  const [selected, setSelected] = useState<Kycrequest | null>(null);
   const { setOpen: setSidebarOpen } = useSidebar();
 
-  const column = columns((row) => {
+  const column = columns((row: Kycrequest) => {
     setSelected(row);
     setDetailOpen(true);
   });
-
+  
   // กด Apply -> ย้าย draft -> applied แล้วค่อยยิง onApply
   const apply = (overrideQ?: string) => {
     const nextQ = (overrideQ ?? q).trim();
