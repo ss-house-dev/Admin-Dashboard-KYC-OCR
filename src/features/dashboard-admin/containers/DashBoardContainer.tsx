@@ -8,107 +8,9 @@ import { SearchView } from "../components/SearchView";
 import { FilterView } from "../components/FilterView";
 import DetailView from "../components/DetailView";
 import { useSidebar } from "@/components/ui/sidebar";
-
-async function getData(): Promise<Kycrequest[]> {
-  return [
-    {
-      transactionNo: "KR-0000001",
-      name: "วิญญ์พัฒน์ เฮาว์เบรนาท",
-      email: "olivia@untitledui.com",
-      submissionDate: "01-01-2025",
-      submissionTime: "16:03:50",
-      status: "Approved",
-    },
-    {
-      transactionNo: "KR-0000002",
-      name: "อัจฉรา แก่นแก้ว",
-      email: "lana@untitledui.com",
-      submissionDate: "01-09-2025",
-      submissionTime: "15:13:49",
-      status: "Pending",
-    },
-    {
-      transactionNo: "KR-0000003",
-      name: "จุฑัย แก่นแก้ว",
-      email: "demi@untitledui.com",
-      submissionDate: "01-02-2025",
-      submissionTime: "14:23:38",
-      status: "Rejected",
-    },
-    {
-      transactionNo: "KR-0000004",
-      name: "วิญญ์พัฒน์ เฮาว์เบรนาท",
-      email: "olivia@untitledui.com",
-      submissionDate: "01-03-2025",
-      submissionTime: "16:03:50",
-      status: "Approved",
-    },
-    {
-      transactionNo: "KR-0000005",
-      name: "อัจฉรา แก่นแก้ว",
-      email: "lana@untitledui.com",
-      submissionDate: "01-09-2025",
-      submissionTime: "15:13:49",
-      status: "Pending",
-    },
-    {
-      transactionNo: "KR-0000006",
-      name: "จุฑัย แก่นแก้ว",
-      email: "demi@untitledui.com",
-      submissionDate: "01-01-2025",
-      submissionTime: "14:23:38",
-      status: "Rejected",
-    },
-    {
-      transactionNo: "KR-0000007",
-      name: "วิญญ์พัฒน์ เฮาว์เบรนาท",
-      email: "olivia@untitledui.com",
-      submissionDate: "01-01-2025",
-      submissionTime: "16:03:50",
-      status: "Approved",
-    },
-    {
-      transactionNo: "KR-0000008",
-      name: "อัจฉรา แก่นแก้ว",
-      email: "lana@untitledui.com",
-      submissionDate: "01-09-2025",
-      submissionTime: "15:13:49",
-      status: "Pending",
-    },
-    {
-      transactionNo: "KR-0000009",
-      name: "จุฑัย แก่นแก้ว",
-      email: "demi@untitledui.com",
-      submissionDate: "01-01-2025",
-      submissionTime: "14:23:38",
-      status: "Rejected",
-    },
-    {
-      transactionNo: "KR-0000010",
-      name: "จุฑัย แก่นแก้ว",
-      email: "demi@untitledui.com",
-      submissionDate: "01-01-2025",
-      submissionTime: "14:23:38",
-      status: "Rejected",
-    },
-    {
-      transactionNo: "KR-0000056",
-      name: "จุฑัย แก่นแก้ว",
-      email: "demi@untitledui.com",
-      submissionDate: "01-01-2025",
-      submissionTime: "14:23:38",
-      status: "Rejected",
-    },
-    {
-      transactionNo: "KR-0000546",
-      name: "จุฑัย แก่นแก้ว",
-      email: "demi@untitledui.com",
-      submissionDate: "01-01-2025",
-      submissionTime: "14:23:38",
-      status: "Approved",
-    },
-  ];
-}
+import { useKycRequest } from "../hooks/useKycRequest";
+import type { KycRequestApi, CompanyAllData } from "../types/kyc";
+import { toYmd, ddmmyyyyToIso, formatFromIso } from "../utils/datetime";
 
 type Filters = {
   q: string;
@@ -117,28 +19,43 @@ type Filters = {
   endDate: string;
 };
 
-// ป้องกัน timezone เพี้ยน (คืน YYYY-MM-DD)
-const toYmd = (d?: Date) =>
-  d
-    ? new Date(d.getTime() - d.getTimezoneOffset() * 60000)
-        .toISOString()
-        .slice(0, 10)
-    : "";
-
-// แปลง dd-mm-yyyy -> yyyy-mm-dd (ถ้าไม่ใช่ฟอร์แมตนี้ จะคืนค่าเดิม)
-const ddmmyyyyToIso = (s: string) => {
-  const m = /^(\d{2})-(\d{2})-(\d{4})$/.exec(s);
-  if (!m) return s;
-  const [, dd, mm, yyyy] = m;
-  return `${yyyy}-${mm}-${dd}`;
-};
-
 const getRowTs = (row: Kycrequest) => {
   const iso = ddmmyyyyToIso(row.submissionDate);
   const time = row.submissionTime ?? "00:00:00";
   const dt = new Date(`${iso}T${time}`);
   return Number.isNaN(+dt) ? 0 : dt.getTime();
 };
+
+// ให้ตรงกับ union ของ Kycrequest.status
+type RowStatus = Kycrequest["status"];
+
+const STATUS_MAP: Record<string, RowStatus> = {
+  approved: "Approved",
+  rejected: "Rejected",
+  pending: "Pending",
+  "approved override": "Approved Override",
+  "rejected override": "Rejected Override",
+};
+
+function normalizeStatus(raw?: string | null): RowStatus {
+  const key = (raw ?? "").trim().toLowerCase();
+  // ถ้าไม่รู้จัก ให้ default เป็น "Pending"
+  return STATUS_MAP[key] ?? "Pending";
+}
+
+// ---------- (ใหม่) Adapter: API -> Kycrequest ----------
+function toDisplayRow(r: KycRequestApi): Kycrequest {
+  const { date, time } = formatFromIso(r.createdAt);
+
+  return {
+    transactionNo: r.correlationId?.trim() ? r.correlationId : r.id,
+    name: r.idcardEdit?.firstNameThai ?? "-",
+    email: r.email || "-",
+    submissionDate: date,
+    submissionTime: time,
+    status: normalizeStatus(r.status),
+  };
+}
 
 export default function DashBoardContainer({
   onApply,
@@ -149,19 +66,23 @@ export default function DashBoardContainer({
   onClear?: () => void;
   defaultValues?: Partial<Filters>;
 }) {
-  // โหลดและ sort ใหม่->เก่า
-  const [data, setData] = React.useState<Kycrequest[]>([]);
-  React.useEffect(() => {
-    let alive = true;
-    getData().then((rows) => {
-      if (!alive) return;
-      const sorted = [...rows].sort((a, b) => getRowTs(b) - getRowTs(a)); // ✅ ใหม่→เก่า
-      setData(sorted);
-    });
-    return () => {
-      alive = false;
-    };
-  }, []);
+  // ---------- (ใหม่) ดึงข้อมูลจริง ----------
+  const {
+    data: companyResp,
+    isLoading,
+    isFetching,
+    error,
+    refetch,
+  } = useKycRequest<CompanyAllData>();
+  // companyResp?.data.requests คือ array ของ KycRequestApi
+
+  // ---------- (ใหม่) แปลงข้อมูล API -> Kycrequest[] + sort ใหม่->เก่า ----------
+  const data: Kycrequest[] = React.useMemo(() => {
+    const list = companyResp?.data?.items ?? []; // <- เปลี่ยน requests -> items
+    const rows = list.map(toDisplayRow);
+    rows.sort((a, b) => getRowTs(b) - getRowTs(a)); // ใหม่ -> เก่า ตามเดิม
+    return rows;
+  }, [companyResp]);
 
   // DRAFT (ค่าที่ผู้ใช้กำลังแก้ใน UI)
   const [q, setQ] = React.useState(defaultValues?.q ?? "");
@@ -246,9 +167,28 @@ export default function DashBoardContainer({
     return rows;
   }, [data, aq, astatus, astart, aend]);
 
+  // ---------- UI Loading / Error ----------
+  if (isLoading) {
+    return <div className="p-8">Loading company data…</div>;
+  }
+  if (error) {
+    return (
+      <div className="p-8 text-red-600">
+        Error: {String(error.message)}
+        <button
+          onClick={() => refetch()}
+          className="ml-3 underline"
+          disabled={isFetching}
+        >
+          {isFetching ? "Retrying…" : "Retry"}
+        </button>
+      </div>
+    );
+  }
+
   return (
     <div className="h-dvh flex flex-col overflow-hidden">
-      {/* แถบค้นหา + ฟิลเตอร์ (คงที่ด้านบน) */}
+      {/* แถบค้นหา + ฟิลเตอร์ */}
       <header className="shrink-0 border-b p-8 bg-white">
         <div className="w-full space-y-2">
           <SearchView
@@ -276,19 +216,17 @@ export default function DashBoardContainer({
         </div>
       </header>
 
-      {/* โซนล่าง: ตาราง + แผงรายละเอียด (อยู่แถวเดียวกัน) */}
+      {/* ตาราง + แผงรายละเอียด  */}
       <section
         className={`
     flex-1 min-h-0 grid overflow-hidden
     ${detailOpen ? "grid-cols-[1fr_360px]" : "grid-cols-1"}
   `}
       >
-        {/* ตาราง (ให้เลื่อนเฉพาะส่วนนี้) */}
         <div className="min-h-0 overflow-auto p-8 w-full">
           <DataTable columns={column} data={filtered} />
         </div>
 
-        {/* คอลัมน์ขวาจะถูก mount ก็ต่อเมื่อ open = true */}
         <DetailView
           open={detailOpen}
           width={360}

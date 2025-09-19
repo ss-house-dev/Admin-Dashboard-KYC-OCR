@@ -70,7 +70,10 @@ export const authOptions: NextAuthOptions = {
 
         const res = await fetch(url, {
           method: "POST",
-          headers: { "Content-Type": "application/json", accept: "application/json" },
+          headers: {
+            "Content-Type": "application/json",
+            accept: "application/json",
+          },
           body: JSON.stringify({ username, password }),
         });
 
@@ -83,7 +86,9 @@ export const authOptions: NextAuthOptions = {
         }
 
         if (!res.ok || !isObject(data)) {
-          const msg = getMessage(data) ?? (res.status === 401 ? "Invalid credentials" : `HTTP ${res.status}`);
+          const msg =
+            getMessage(data) ??
+            (res.status === 401 ? "Invalid credentials" : `HTTP ${res.status}`);
           throw new Error(msg);
         }
 
@@ -104,17 +109,58 @@ export const authOptions: NextAuthOptions = {
     async jwt({ token, user }) {
       const t = token as AppJWT;
 
+      // เซ็ตค่าตอน login ครั้งแรก
       if (user) {
-        const u = user as unknown as SignInSuccess;
+        const u = user as SignInSuccess;
         t.name = u.name ?? t.name ?? null;
         t.id = u.id;
         t.role = u.role;
         t.accessToken = u.accessToken;
         t.refreshToken = u.refreshToken;
-        t.accessTokenExpires = Date.now() + ((u.expiresIn ?? 900) * 1000);
+        t.accessTokenExpires = Date.now() + (u.expiresIn ?? 900) * 1000; // เช่น 15 นาที
+        return t;
       }
+
+      // ถ้ายังไม่หมดอายุ ให้ใช้ต่อ
+      const safeMargin = 30 * 1000; // รีเฟรชก่อนหมดจริงเล็กน้อย 30s
+      if (
+        t.accessToken &&
+        t.accessTokenExpires &&
+        Date.now() < t.accessTokenExpires - safeMargin
+      ) {
+        return t;
+      }
+
+      // หมดอายุหรือใกล้หมด → พยายาม refresh
+      try {
+        if (t.refreshToken) {
+          const resp = await fetch(`${API_BASE_INTERNAL}/auth/refresh`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              accept: "application/json",
+            },
+            body: JSON.stringify({ refreshToken: t.refreshToken }),
+          });
+          if (!resp.ok) throw new Error("refresh failed");
+          const rd = (await resp.json()) as {
+            accessToken: string;
+            refreshToken?: string;
+            expiresIn?: number;
+          };
+          t.accessToken = rd.accessToken;
+          t.refreshToken = rd.refreshToken ?? t.refreshToken;
+          t.accessTokenExpires = Date.now() + (rd.expiresIn ?? 900) * 1000;
+          return t;
+        }
+      } catch {
+        // refresh ไม่ได้ → เคลียร์ token เพื่อให้ระบบบังคับ login ใหม่
+        return {};
+      }
+
       return t;
     },
+
     async session({ session, token }) {
       const t = token as AppJWT;
       const s = session as AppSession;
@@ -125,8 +171,8 @@ export const authOptions: NextAuthOptions = {
         name: s.user?.name ?? t.name ?? null,
         role: t.role,
       };
-      s.accessToken = t.accessToken;
-      s.refreshToken = t.refreshToken;
+      // s.accessToken = t.accessToken;
+      // s.refreshToken = t.refreshToken;
       return s;
     },
   },
