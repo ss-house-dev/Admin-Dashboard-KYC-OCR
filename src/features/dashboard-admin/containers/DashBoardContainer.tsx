@@ -102,10 +102,10 @@ export default function DashBoardContainer({
 
   //Detail
   const [detailOpen, setDetailOpen] = useState(false);
-  const [selected, setSelected] = useState<any | null>(null);
+  const [selected, setSelected] = useState<Kycrequest | null>(null);
   const { setOpen: setSidebarOpen } = useSidebar();
 
-  const column = columns((row) => {
+  const column = columns((row: Kycrequest) => {
     setSelected(row);
     setDetailOpen(true);
   });

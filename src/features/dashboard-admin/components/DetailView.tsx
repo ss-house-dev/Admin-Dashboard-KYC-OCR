@@ -2,6 +2,7 @@
 
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
+import { Kycrequest } from "../components/column";
 import { cn } from "@/lib/utils";
 import { X } from "lucide-react";
 
@@ -24,7 +25,7 @@ export default function DetailView({
   open: boolean;
   onClose: () => void;
   width?: number;
-  data?: DetailData;
+  data: Kycrequest | null; 
   className?: string;
 }) {
   if (!open) return null;
