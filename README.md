@@ -24,19 +24,33 @@ pnpm add -D @next/eslint-plugin-next eslint-plugin-react-hooks eslint-plugin-rea
 
 ***component ของ shadCN***
 pnpm dlx shadcn@latest add avatar
+
 pnpm dlx shadcn@latest add badge
+
 pnpm dlx shadcn@latest add button
+
 pnpm dlx shadcn@latest add calendar
+
 pnpm dlx shadcn@latest add input
+
 pnpm dlx shadcn@latest add label
+
 pnpm dlx shadcn@latest add popover
+
 pnpm dlx shadcn@latest add scroll-area
+
 pnpm dlx shadcn@latest add select
+
 pnpm dlx shadcn@latest add separator
+
 pnpm dlx shadcn@latest add sheet
+
 pnpm dlx shadcn@latest add sidebar
+
 pnpm dlx shadcn@latest add skeleton
+
 pnpm dlx shadcn@latest add table
+
 pnpm dlx shadcn@latest add tooltip
 
 
