@@ -1,6 +1,6 @@
 import { NextResponse, NextRequest } from "next/server";
 import { getToken } from "next-auth/jwt";
-import axios from "axios";
+import axios, { isAxiosError } from "axios";
 
 const API_BASE_INTERNAL =
   process.env.API_BASE_INTERNAL ?? "http://141.11.156.52:3203";
@@ -16,42 +16,49 @@ export async function GET(req: NextRequest) {
 
   try {
     // ขอ companyId
-    const resMe = await fetch(`${API_BASE_INTERNAL}/auth/me`, {
-      headers: { Authorization: `Bearer ${token.accessToken}` },
-      cache: "no-store",
-    });
-    if (!resMe.ok) {
-      const text = await resMe.text();
-      return NextResponse.json(
-        { error: "Failed to fetch companyId", detail: text },
-        { status: resMe.status }
-      );
-    }
-    const { companyId } = await resMe.json();
-
-    // ดึงรายการ KYC 
-    // กำหนด path ให้ดึงrequestที่ยังทำkycไม่สำเร็จมา (ต้องแก้)
-    const resKyc = await fetch(
-      `${API_KYC_REQUEST}/kyc/requests?companyId=${companyId}&completedOnly=false&embed=true`,
+    const meRes = await axios.get<{ companyId: string }>(
+      `${API_BASE_INTERNAL}/auth/me`,
       {
-        headers: { Authorization: `Bearer ${token.accessToken}` },
-        cache: "no-store",
+        headers: {
+          Authorization: `Bearer ${token.accessToken}`,
+          // ถ้าต้องการกัน cache ที่ proxy บางตัว
+          "Cache-Control": "no-cache",
+        },
       }
     );
-    if (!resKyc.ok) {
-      const text = await resKyc.text();
+    const { companyId } = meRes.data;
+
+    // ดึงรายการ KYC (ยังไม่สำเร็จ)
+    const kycRes = await axios.get(
+      `${API_KYC_REQUEST}/kyc/requests`,
+      {
+        headers: {
+          Authorization: `Bearer ${token.accessToken}`,
+          "Cache-Control": "no-cache",
+        },
+        params: {
+          companyId,
+          completedOnly: false,
+          embed: true,
+        },
+      }
+    );
+
+    return NextResponse.json({ companyId, data: kycRes.data });
+  } catch (e: unknown) {
+    if (isAxiosError(e)) {
+      const status = e.response?.status ?? 502;
+      // พยายามส่งข้อมูล error จากปลายทางกลับไปเพื่อ debug ได้
+      const detail = e.response?.data ?? e.message;
       return NextResponse.json(
-        { error: "Failed to fetch company data", detail: text },
-        { status: resKyc.status }
+        { error: "Upstream request failed", detail },
+        { status }
       );
     }
-    const kycData = await resKyc.json();
-
-    return NextResponse.json({ companyId, data: kycData });
-  } catch (e: any) {
     return NextResponse.json(
-      { error: "Unexpected error", detail: String(e?.message ?? e) },
+      { error: "Unexpected error", detail: String((e as any)?.message ?? e) },
       { status: 500 }
     );
   }
+  
 }
