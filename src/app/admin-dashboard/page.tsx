@@ -1,8 +1,5 @@
-import { requireSession } from "@/server/auth";
+import DashBoardContainer from "@/features/dashboard-admin/containers/DashBoardContainer";
 
-export default async function AdminDashboardPage() {
-  await requireSession();
-  return (
-    <div className="grid min-h-dvh place-items-center text-xl">เข้ามาแล้ว</div>
-  );
+export default function AdminDashboardPage() {
+  return <DashBoardContainer />;
 }

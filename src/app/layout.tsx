@@ -30,7 +30,7 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <body
         suppressHydrationWarning
-        className={`${geistSans.variable} ${geistMono.variable} antialiased h-dvh w-full overflow-hidden`}
+        className={`${geistSans.variable} ${geistMono.variable} ntialiased h-dvh w-full overflow-hidden`}
         data-gramm="false"
         data-gramm_editor="false"
       >
