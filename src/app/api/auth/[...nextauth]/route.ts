@@ -162,15 +162,18 @@ export const authOptions: NextAuthOptions = {
     },
 
     async session({ session, token }) {
-      // ไม่ต้องส่ง token ให้ client (คงความปลอดภัยไว้)
       const t = token as AppJWT;
-      (session.user as any) = {
-        ...session.user,
+      const s = session as AppSession;
+
+      s.user = {
+        ...s.user,
         id: t.id,
-        name: session.user?.name ?? t.name ?? null,
+        name: s.user?.name ?? t.name ?? null,
         role: t.role,
       };
-      return session;
+      // s.accessToken = t.accessToken;
+      // s.refreshToken = t.refreshToken;
+      return s;
     },
   },
 };

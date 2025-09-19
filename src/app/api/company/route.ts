@@ -56,7 +56,7 @@ export async function GET(req: NextRequest) {
       );
     }
     return NextResponse.json(
-      { error: "Unexpected error", detail: String((e as any)?.message ?? e) },
+      { error: "Unexpected error", detail: String(e) },
       { status: 500 }
     );
   }
