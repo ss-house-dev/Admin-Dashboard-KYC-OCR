@@ -56,11 +56,11 @@ function toDisplayRow(r: KycRequestApi): Kycrequest & { __keys: string } {
   const email = r.email?.trim() ?? "";
 
   const searchKeys = [
-    correlationId, // ✅ ค้นหาได้ด้วย correlationId
-    idFallback, // สำรอง ถ้า correlationId ว่าง
-    email, // ✅ email
-    firstNameThai, // ✅ firstNameThai
-    lastNameThai, // ✅ lastNameThai
+    correlationId, 
+    idFallback, 
+    email, 
+    firstNameThai, 
+    lastNameThai, 
     fullNameThai,
   ]
     .filter(Boolean)
@@ -69,12 +69,12 @@ function toDisplayRow(r: KycRequestApi): Kycrequest & { __keys: string } {
 
   return {
     transactionNo: correlationId || idFallback,
-    name: fullNameThai || "-", // ✅ แสดงชื่อ+นามสกุลไทย
+    name: fullNameThai || "-", 
     email: email || "-",
     submissionDate: date,
     submissionTime: time,
     status: normalizeStatus(r.status),
-    __keys: searchKeys, // ✅ สำหรับค้นหา
+    __keys: searchKeys, 
   };
 }
 
@@ -95,7 +95,6 @@ export default function DashBoardContainer({
     error,
     refetch,
   } = useKycRequest<CompanyAllData>();
-  // companyResp?.data.requests คือ array ของ KycRequestApi
 
   // ---------- (ใหม่) แปลงข้อมูล API -> Kycrequest[] + sort ใหม่->เก่า ----------
   const data: (Kycrequest & { __keys: string })[] = React.useMemo(() => {

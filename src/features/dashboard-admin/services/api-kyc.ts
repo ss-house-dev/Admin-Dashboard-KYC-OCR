@@ -22,12 +22,14 @@ export async function fetchKycRequests(params: {
   accessToken: string;
   companyId: string;
   completedOnly?: boolean;
+  limit?: number;
   embed?: boolean;
 }) {
   const {
     accessToken,
     companyId,
     completedOnly = false,
+    limit = 100,
     embed = true,
   } = params;
 
@@ -39,6 +41,7 @@ export async function fetchKycRequests(params: {
     params: {
       companyId,
       completedOnly,
+      limit,
       embed,
     },
   });
@@ -49,6 +52,6 @@ export async function fetchKycRequests(params: {
 /*get companyId + ดึง KYC requests */
 export async function fetchDashboardKyc(accessToken: string) {
   const companyId = await fetchCompanyId(accessToken);
-  const data = await fetchKycRequests({ accessToken, companyId });
+  const data = await fetchKycRequests({ accessToken, companyId, limit: 100 });
   return { companyId, data };
 }

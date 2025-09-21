@@ -36,11 +36,11 @@ export type BookbankOrigin = {
 
 export type KycRequestApi = {
   companyId: string;
-  correlationId: string;     // ใช้เป็น transactionNo ตามโจทย์
-  status: string;            // อาจว่าง ""
-  email: string;             // อาจว่าง ""
-  requestedAt: string;       // มีมา แต่โจทย์ต้องใช้ createdAt
-  createdAt: string;         // ✅ ใช้อันนี้ทำวันที่/เวลา
+  correlationId: string;    
+  status: string;           
+  email: string;            
+  requestedAt: string;       
+  createdAt: string;         
   updatedAt: string;
   idcardThaiNameMatchPercent: number | null;
   idcardEnglishNameMatchPercent: number | null;
