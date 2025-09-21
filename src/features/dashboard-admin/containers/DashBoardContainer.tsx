@@ -164,29 +164,45 @@ export default function DashBoardContainer({
     onClear?.();
   };
 
-  // ---------- กรองด้วย "applied" เท่านั้น ----------
   const filtered = React.useMemo(() => {
     const qLower = aq.trim().toLowerCase();
+
+    // แปลงเป็น Y-M-D (ตัด timezone เพี้ยน) — ใช้ util เดิมของโปรเจกต์
+    const startYmd = toYmd(astart); 
+    const endYmd = toYmd(aend);
+
+    const isSingleDay = !!startYmd && !!endYmd && startYmd === endYmd;
+
     const rows = data.filter((row) => {
+      // ---------- keyword ----------
       const matchQ =
         !qLower ||
-        row.__keys?.includes(qLower) || // ✅ ครอบคลุม correlationId/email/first/last
-        row.transactionNo.toLowerCase().includes(qLower) || // เผื่อ (fallback)
-        row.name.toLowerCase().includes(qLower) || // เผื่อ (fallback)
-        row.email.toLowerCase().includes(qLower); // เผื่อ (fallback)
+        row.__keys?.includes(qLower) ||
+        row.transactionNo.toLowerCase().includes(qLower) ||
+        row.name.toLowerCase().includes(qLower) ||
+        row.email.toLowerCase().includes(qLower);
 
+      // ---------- status ----------
       const matchStatus =
         astatus === "all" || row.status.toLowerCase() === astatus.toLowerCase();
 
-      const iso = ddmmyyyyToIso(row.submissionDate);
-      const d = new Date(iso);
-      const okDate = d instanceof Date && !isNaN(+d);
-      const matchStart =
-        !astart || (okDate && d >= new Date(astart.toDateString()));
-      const matchEnd = !aend || (okDate && d <= new Date(aend.toDateString()));
+      // ---------- date (เทียบแบบ YMD string) ----------
+      const rowYmd = ddmmyyyyToIso(row.submissionDate); // ได้ "YYYY-MM-DD"
+      let matchDate = true;
 
-      return matchQ && matchStatus && matchStart && matchEnd;
+      if (isSingleDay) {
+        // กรณีเลือกวันเดียว: แสดงเฉพาะแถวที่ตรงวันนั้นเป๊ะ ๆ
+        matchDate = rowYmd === startYmd;
+      } else {
+        // กรณีช่วงวันที่: inclusive ทั้งหัว-ท้าย
+        const afterStart = !startYmd || rowYmd >= startYmd;
+        const beforeEnd = !endYmd || rowYmd <= endYmd;
+        matchDate = afterStart && beforeEnd;
+      }
+
+      return matchQ && matchStatus && matchDate;
     });
+
     rows.sort((a, b) => getRowTs(b) - getRowTs(a));
     return rows;
   }, [data, aq, astatus, astart, aend]);
@@ -217,7 +233,8 @@ export default function DashBoardContainer({
         <div className="w-full space-y-2">
           <SearchView
             className="w-[260px]"
-            defaultValue={q}
+            value={q} // ✅ เพิ่ม prop คุม state จากข้างนอก
+            onChangeValue={setQ} // ✅ รับการเปลี่ยนค่า
             onSearch={(val) => apply(val)}
           />
           <FilterView

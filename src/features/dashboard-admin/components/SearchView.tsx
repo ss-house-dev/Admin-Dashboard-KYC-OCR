@@ -7,26 +7,27 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 type Props = {
-  defaultValue?: string;
+  value?: string;                   
   placeholder?: string;
   className?: string;
+  onChangeValue?: (val: string) => void; 
   onSearch: (value: string) => void;
 };
 
 export function SearchView({
-  defaultValue = "",
+  value = "",
   placeholder = "Search...",
   className,
+  onChangeValue,
   onSearch,
 }: Props) {
-  const [value, setValue] = React.useState(defaultValue);
   const doSearch = () => onSearch(value.trim());
 
   return (
     <div className={cn("relative", className)}>
       <Input
         value={value}
-        onChange={(e) => setValue(e.target.value)}
+        onChange={(e) => onChangeValue?.(e.target.value)} 
         placeholder={placeholder}
         className={cn(
           "h-10 pl-4 pr-12 rounded-lg",

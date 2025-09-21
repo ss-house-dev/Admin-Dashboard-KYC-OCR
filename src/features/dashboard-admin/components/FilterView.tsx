@@ -68,6 +68,13 @@ export function FilterView({
   const [openStart, setOpenStart] = React.useState(false);
   const [openEnd, setOpenEnd] = React.useState(false);
 
+  // 🔒 normalize today เป็นเที่ยงคืน เพื่อตัดปัญหา timezone
+  const today = React.useMemo(() => {
+    const t = new Date();
+    t.setHours(0, 0, 0, 0);
+    return t;
+  }, []);
+
   const fmtDisplay = (d?: Date) => (d ? d.toLocaleDateString() : undefined);
 
   return (
@@ -171,10 +178,13 @@ export function FilterView({
                 mode="single"
                 captionLayout="dropdown"
                 selected={start}
+                // ✅ เลือกได้ถึงวันนี้เท่านั้น
+                disabled={[{ after: today }]}
                 onSelect={(d) => {
-                  onChangeStart(d);
-                  // ถ้าเลือก start > end ให้เคลียร์ end (กฎนี้อยู่ฝั่ง container จะดีกว่า แต่แถม safety ให้ด้วย)
-                  if (d && end && d > end) onChangeEnd(undefined);
+                  // กันเลือกอนาคต (ถ้า component อนุญาตด้วยเหตุผลอื่น)
+                  const picked = d && d > today ? today : d || undefined;
+                  onChangeStart(picked);
+                  if (picked && end && picked > end) onChangeEnd(undefined);
                   setOpenStart(false);
                 }}
               />
@@ -212,10 +222,23 @@ export function FilterView({
                 mode="single"
                 captionLayout="dropdown"
                 selected={end}
+                // ✅ ต้องไม่ก่อน start และไม่เกินวันนี้
+                disabled={
+                  start
+                    ? [{ before: start }, { after: today }]
+                    : [{ after: today }]
+                }
                 onSelect={(d) => {
-                  // ถ้าเลือก end < start ให้ขยับ start ตาม (หรือจะบล็อกก็ได้)
-                  if (d && start && d < start) onChangeStart(d);
-                  onChangeEnd(d);
+                  if (!d) {
+                    onChangeEnd(undefined);
+                    setOpenEnd(false);
+                    return;
+                  }
+                  // clamp: ต่ำสุด = start, สูงสุด = today
+                  let picked = d;
+                  if (start && picked < start) picked = start;
+                  if (picked > today) picked = today;
+                  onChangeEnd(picked);
                   setOpenEnd(false);
                 }}
               />
