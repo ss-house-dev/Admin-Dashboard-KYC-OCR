@@ -43,17 +43,38 @@ function normalizeStatus(raw?: string | null): RowStatus {
   return STATUS_MAP[key] ?? "Pending";
 }
 
-// ---------- (ใหม่) Adapter: API -> Kycrequest ----------
-function toDisplayRow(r: KycRequestApi): Kycrequest {
+// ---------- (ใหม่) Adapter: API -> Kycrequest + search keys ----------
+function toDisplayRow(r: KycRequestApi): Kycrequest & { __keys: string } {
   const { date, time } = formatFromIso(r.createdAt);
 
+  const firstNameThai = r.idcardEdit?.firstNameThai?.trim() ?? "";
+  const lastNameThai = r.idcardEdit?.lastNameThai?.trim() ?? "";
+  const fullNameThai = [firstNameThai, lastNameThai].filter(Boolean).join(" ");
+
+  const correlationId = r.correlationId?.trim() ?? "";
+  const idFallback = r.id?.trim() ?? "";
+  const email = r.email?.trim() ?? "";
+
+  const searchKeys = [
+    correlationId, // ✅ ค้นหาได้ด้วย correlationId
+    idFallback, // สำรอง ถ้า correlationId ว่าง
+    email, // ✅ email
+    firstNameThai, // ✅ firstNameThai
+    lastNameThai, // ✅ lastNameThai
+    fullNameThai,
+  ]
+    .filter(Boolean)
+    .join(" ")
+    .toLowerCase();
+
   return {
-    transactionNo: r.correlationId?.trim() ? r.correlationId : r.id,
-    name: r.idcardEdit?.firstNameThai ?? "-",
-    email: r.email || "-",
+    transactionNo: correlationId || idFallback,
+    name: fullNameThai || "-", // ✅ แสดงชื่อ+นามสกุลไทย
+    email: email || "-",
     submissionDate: date,
     submissionTime: time,
     status: normalizeStatus(r.status),
+    __keys: searchKeys, // ✅ สำหรับค้นหา
   };
 }
 
@@ -77,10 +98,10 @@ export default function DashBoardContainer({
   // companyResp?.data.requests คือ array ของ KycRequestApi
 
   // ---------- (ใหม่) แปลงข้อมูล API -> Kycrequest[] + sort ใหม่->เก่า ----------
-  const data: Kycrequest[] = React.useMemo(() => {
-    const list = companyResp?.data?.items ?? []; // <- เปลี่ยน requests -> items
+  const data: (Kycrequest & { __keys: string })[] = React.useMemo(() => {
+    const list = companyResp?.data?.items ?? [];
     const rows = list.map(toDisplayRow);
-    rows.sort((a, b) => getRowTs(b) - getRowTs(a)); // ใหม่ -> เก่า ตามเดิม
+    rows.sort((a, b) => getRowTs(b) - getRowTs(a));
     return rows;
   }, [companyResp]);
 
@@ -111,11 +132,12 @@ export default function DashBoardContainer({
     setSelected(row);
     setDetailOpen(true);
   });
-  
+
   // กด Apply -> ย้าย draft -> applied แล้วค่อยยิง onApply
   const apply = (overrideQ?: string) => {
     const nextQ = (overrideQ ?? q).trim();
-    setAq(nextQ);
+    setQ(nextQ); // อัพเดท draft ด้วย (เพื่อ sync input)
+    setAq(nextQ); // applied
     setAstatus(status);
     setAstart(start);
     setAend(end);
@@ -142,15 +164,16 @@ export default function DashBoardContainer({
     onClear?.();
   };
 
-  // กรองด้วย "applied" เท่านั้น
+  // ---------- กรองด้วย "applied" เท่านั้น ----------
   const filtered = React.useMemo(() => {
     const qLower = aq.trim().toLowerCase();
     const rows = data.filter((row) => {
       const matchQ =
         !qLower ||
-        row.transactionNo.toLowerCase().includes(qLower) ||
-        row.name.toLowerCase().includes(qLower) ||
-        row.email.toLowerCase().includes(qLower);
+        row.__keys?.includes(qLower) || // ✅ ครอบคลุม correlationId/email/first/last
+        row.transactionNo.toLowerCase().includes(qLower) || // เผื่อ (fallback)
+        row.name.toLowerCase().includes(qLower) || // เผื่อ (fallback)
+        row.email.toLowerCase().includes(qLower); // เผื่อ (fallback)
 
       const matchStatus =
         astatus === "all" || row.status.toLowerCase() === astatus.toLowerCase();
@@ -164,7 +187,6 @@ export default function DashBoardContainer({
 
       return matchQ && matchStatus && matchStart && matchEnd;
     });
-    // คงลำดับใหม่->เก่า (สำรอง ถ้าต้องแน่ใจ)
     rows.sort((a, b) => getRowTs(b) - getRowTs(a));
     return rows;
   }, [data, aq, astatus, astart, aend]);
@@ -196,7 +218,7 @@ export default function DashBoardContainer({
           <SearchView
             className="w-[260px]"
             defaultValue={q}
-            onSearch={(val) => setQ(val)}
+            onSearch={(val) => apply(val)}
           />
           <FilterView
             status={status}
