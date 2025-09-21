@@ -108,7 +108,7 @@ export default function SignInView({
                 onClick={onGoSignUp}
                 className="text-blue-600 hover:underline"
               >
-                Sign up
+                Register
               </button>
             </p>
           </div>

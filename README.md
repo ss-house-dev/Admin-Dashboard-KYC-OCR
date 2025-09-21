@@ -1,4 +1,4 @@
-ลงเพิ่ม
+## ลงเพิ่ม
 pnpm add -D @tanstack/react-query-devtools
 
 pnpm add react-hook-form
@@ -22,8 +22,36 @@ pnpm add -D eslint-plugin-react-hooks eslint-plugin-react @typescript-eslint/esl
 pnpm add -D @next/eslint-plugin-next eslint-plugin-react-hooks eslint-plugin-react @typescript-eslint/parser @typescript-eslint/eslint-plugin
 
 
+***component ของ shadCN***
+pnpm dlx shadcn@latest add avatar
 
+pnpm dlx shadcn@latest add badge
 
+pnpm dlx shadcn@latest add button
+
+pnpm dlx shadcn@latest add calendar
+
+pnpm dlx shadcn@latest add input
+
+pnpm dlx shadcn@latest add label
+
+pnpm dlx shadcn@latest add popover
+
+pnpm dlx shadcn@latest add scroll-area
+
+pnpm dlx shadcn@latest add select
+
+pnpm dlx shadcn@latest add separator
+
+pnpm dlx shadcn@latest add sheet
+
+pnpm dlx shadcn@latest add sidebar
+
+pnpm dlx shadcn@latest add skeleton
+
+pnpm dlx shadcn@latest add table
+
+pnpm dlx shadcn@latest add tooltip
 
 
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
