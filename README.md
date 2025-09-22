@@ -53,6 +53,10 @@ pnpm dlx shadcn@latest add table
 
 pnpm dlx shadcn@latest add tooltip
 
+pnpm dlx shadcn@latest add card
+
+pnpm dlx shadcn@latest add tabs
+
 
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
