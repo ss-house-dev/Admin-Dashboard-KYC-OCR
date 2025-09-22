@@ -1,5 +1,11 @@
 "use client";
 
+// logout
+import * as React from "react";
+import { LogOut } from "lucide-react";
+import { signOut } from "next-auth/react";
+import { useRouter } from "next/navigation";
+
 import {
   Bell,
   Settings,
@@ -23,7 +29,6 @@ import Image from "next/image";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { calibri } from "@/app/font";
 
 // Menu items.
 const items = [
@@ -55,6 +60,18 @@ const secondaryItems = [
 ];
 
 export function AppSidebar() {
+  //logout
+  const router = useRouter();
+  const [loading, setLoading] = React.useState(false);
+
+  async function handleLogout() {
+    try {
+      await fetch("/api/logout", { method: "POST" });
+    } catch {}
+    const origin = typeof window !== "undefined" ? window.location.origin : "";
+    await signOut({ callbackUrl: `${origin}/sign-in`, redirect: true });
+  }
+
   return (
     <Sidebar className="h-full border-r bg-white p-0" collapsible="icon">
       <SidebarTrigger
@@ -130,6 +147,16 @@ export function AppSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
+
+      <Button
+        variant="outline"
+        className="mt-2 w-full gap-2"
+        onClick={handleLogout}
+        disabled={loading}
+      >
+        <LogOut className="h-4 w-4" />
+        {loading ? "Logging out..." : "Logout"}
+      </Button>
 
       {/* เพิ่มส่วน User Profile ที่ Sidebar Footer */}
       <SidebarFooter className="border-t px-4 py-4">
