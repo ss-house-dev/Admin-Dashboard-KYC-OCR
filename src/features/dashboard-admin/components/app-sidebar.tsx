@@ -65,18 +65,11 @@ export function AppSidebar() {
   const [loading, setLoading] = React.useState(false);
 
   async function handleLogout() {
-    // เคาะ API ของเราหรือจะข้ามก็ได้ (ถ้าใช้ events.signOut อยู่แล้ว)
     try {
       await fetch("/api/logout", { method: "POST" });
     } catch {}
-
-    // ใช้ origin ปัจจุบัน แทน NEXTAUTH_URL ที่อาจชี้ผิด
     const origin = typeof window !== "undefined" ? window.location.origin : "";
-
-    await signOut({
-      callbackUrl: `${origin}/auth/signin`,
-      redirect: true,
-    });
+    await signOut({ callbackUrl: `${origin}/sign-in`, redirect: true });
   }
 
   return (

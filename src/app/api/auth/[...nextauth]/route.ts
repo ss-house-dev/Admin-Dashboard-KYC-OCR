@@ -58,7 +58,7 @@ function getMessage(v: unknown): string | undefined {
 /* =================== NextAuth ==================== */
 export const authOptions: NextAuthOptions = {
   // ให้ตรงกับ middleware ที่ redirect -> /auth/signin
-  pages: { signIn: "/auth/signin" },
+  pages: { signIn: "/sign-in" },
   session: { strategy: "jwt" },
 
   providers: [
