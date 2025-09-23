@@ -434,12 +434,12 @@ export default function DetailView({
                       />
                       <Field label="Bank" value={detail?.bank} />
                       <Field label="Branch" value={detail?.branch} />
-                      <div className="col-span-2">
-                        <div className="flex items-center gap-2">
-                          <span className="text-sx font-normal">Name Matching:</span>
+                      <Field
+                        label="Name Matching"
+                        value={
                           <Badge
                             className={cn(
-                              "border-none",
+                              "border-none px-2 py-0.5 text-sm font-normal",
                               detail?.bankNameMatch
                                 ? "bg-green-100 text-green-700"
                                 : "bg-red-100 text-red-700"
@@ -447,8 +447,8 @@ export default function DetailView({
                           >
                             {detail?.bankNameMatch ? "Match" : "Not match"}
                           </Badge>
-                        </div>
-                      </div>
+                        }
+                      />
                     </div>
                   </div>
                 </SectionFrame>
