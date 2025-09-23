@@ -93,18 +93,18 @@ export default function DashBoardContainer({
   onClear?: () => void;
   defaultValues?: Partial<Filters>;
 }) {
-  // ✅ 1. เก็บสถานะการโหลด
+  // 1. เก็บสถานะการโหลด
   const [isLoading, setIsLoading] = useState(true);
   const [isRefetching, setIsRefetching] = useState(false);
   const [error, setError] = useState<Error | null>(null);
 
-  // ✅ 2. เก็บข้อมูล items/total/offset
+  // 2. เก็บข้อมูล items/total/offset
   const [items, setItems] = useState<(Kycrequest & { __keys: string })[]>([]);
   const [total, setTotal] = useState<number>(0);
   const [nextPage, setNextPage] = useState<number>(1);
   const [initialLimit] = useState<number>(100);
 
-  // ✅ 3. Pagination
+  // 3. Pagination
   const [pagination, setPagination] = useState<PaginationState>({
     pageIndex: 0,
     pageSize: 10,
@@ -126,12 +126,12 @@ export default function DashBoardContainer({
   const [astart, setAstart] = useState<Date | undefined>(start);
   const [aend, setAend] = useState<Date | undefined>(end);
 
-  // ✅ Helper functions สำหรับ pattern matching
+  // Helper functions สำหรับ pattern matching
   const isEmail = (text: string) => /\S+@\S+\.\S+/.test(text);
   const isTransactionNumber = (text: string) => /^\d{1,10}$/.test(text);
   const isThaiText = (text: string) => /[\u0E00-\u0E7F]/.test(text);
 
-  // ✅ 4. ฟังก์ชันสร้าง query parameters
+  // 4. ฟังก์ชันสร้าง query parameters
   const buildFilterQuery = useCallback(
     (page: number, limit: number) => {
       const params: Record<string, string> = {
@@ -139,7 +139,7 @@ export default function DashBoardContainer({
         limit: String(limit),
       };
 
-      let specialSingleThai: string | null = null; // <-- เก็บ keyword ถ้ามี
+      let specialSingleThai: string | null = null; 
 
       const qTrim = aq.trim();
       if (qTrim) {
@@ -152,7 +152,6 @@ export default function DashBoardContainer({
         } else if (isThaiText(qTrim)) {
           const parts = qTrim.split(/\s+/).filter(Boolean);
           if (parts.length === 1) {
-            // ✅ เก็บไว้ให้ fetchData ยิง 2 เส้นแทน
             specialSingleThai = parts[0];
             console.log("Search by Thai single name:", parts[0]);
           } else {
@@ -179,12 +178,12 @@ export default function DashBoardContainer({
       if (endIso) params.endDate = endIso;
 
       console.log("Final query params:", params);
-      return { params, specialSingleThai }; // ✅ คืนค่าพิเศษออกไปด้วย
+      return { params, specialSingleThai }; 
     },
     [aq, astatus, astart, aend]
   );
 
-  // ✅ 5. ฟังก์ชันดึงข้อมูลจาก API
+  // 5. ฟังก์ชันดึงข้อมูลจาก API
   const fetchData = useCallback(
     async (page: number = 1, append: boolean = false) => {
       try {
@@ -198,7 +197,6 @@ export default function DashBoardContainer({
         let newItems: (Kycrequest & { __keys: string })[] = [];
 
         if (specialSingleThai) {
-          // ยิง 2 เส้น parallel
           const [firstRes, lastRes] = await Promise.all([
             apiClient.get<{
               companyId: string;
@@ -220,7 +218,6 @@ export default function DashBoardContainer({
           ];
           newItems = mergedItems.map(toDisplayRow);
         } else {
-          // ยิงปกติ
           const res = await apiClient.get<{
             companyId: string;
             data: { items: KycRequestApi[]; total: number };
@@ -247,7 +244,7 @@ export default function DashBoardContainer({
         setNextPage(page + 1);
         setError(null);
       } catch (err) {
-        console.error("💥 Fetch data error:", err);
+        console.error("Fetch data error:", err);
         setError(err as Error);
       } finally {
         setIsLoading(false);
@@ -257,7 +254,7 @@ export default function DashBoardContainer({
     [buildFilterQuery, pagination.pageSize]
   );
 
-  // ✅ 6. โหลดข้อมูลครั้งแรกเมื่อ component mount
+  // 6. โหลดข้อมูลครั้งแรกเมื่อ component mount
   useEffect(() => {
     fetchData(1, false);
   }, [aq, astatus, astart, aend]);
@@ -271,12 +268,12 @@ export default function DashBoardContainer({
     setDetailOpen(true);
   });
 
-  // ✅ 7. Apply filters - ป้องกันการ get ซ้ำเมื่อค่าไม่เปลี่ยน
+  // 7. Apply filters - ป้องกันการ get ซ้ำเมื่อค่าไม่เปลี่ยน
   const apply = useCallback(
     (overrideQ?: string) => {
       const nextQ = (overrideQ ?? q).trim();
 
-      // ✅ เช็คว่ามีการเปลี่ยนแปลงจริงๆ หรือไม่
+      // เช็คว่ามีการเปลี่ยนแปลงจริงๆ หรือไม่
       const hasQueryChange = nextQ !== aq;
       const hasStatusChange = status !== astatus;
       const hasStartDateChange = start?.getTime() !== astart?.getTime();
@@ -288,13 +285,13 @@ export default function DashBoardContainer({
         hasStartDateChange ||
         hasEndDateChange;
 
-      // ✅ ถ้าไม่มี search query และไม่มีการเปลี่ยน filter อื่น ไม่ต้อง get
+      // ถ้าไม่มี search query และไม่มีการเปลี่ยน filter อื่น ไม่ต้อง get
       if (!nextQ && status === "all" && !start && !end && !hasChanges) {
         console.log("No search query or filters provided, skipping API call");
         return;
       }
 
-      // ✅ ถ้าไม่มีการเปลี่ยนแปลงใดๆ ไม่ต้อง get
+      // ถ้าไม่มีการเปลี่ยนแปลงใดๆ ไม่ต้อง get
       if (!hasChanges) {
         console.log("No changes detected, skipping API call");
         return;
@@ -324,9 +321,9 @@ export default function DashBoardContainer({
     [q, status, start, end, aq, astatus, astart, aend, onApply]
   );
 
-  // ✅ 8. เมื่อ applied values เปลี่ยน ให้ fetch ข้อมูลใหม่
+  // 8. เมื่อ applied values เปลี่ยน ให้ fetch ข้อมูลใหม่
   useEffect(() => {
-    // ✅ เฝ้าดู applied values เท่านั้น และข้าม initial render
+    // เฝ้าดู applied values เท่านั้น และข้าม initial render
     const hasAnyAppliedFilter = aq || astatus !== "all" || astart || aend;
 
     if (hasAnyAppliedFilter || items.length === 0) {
@@ -334,7 +331,7 @@ export default function DashBoardContainer({
     }
   }, [aq, astatus, astart, aend]);
 
-  // ✅ 9. Clear filters
+  // 9. Clear filters
   const clearAll = useCallback(() => {
     setQ("");
     setStatus("all");
@@ -347,12 +344,10 @@ export default function DashBoardContainer({
     setAend(undefined);
   }, [onClear]);
 
-  // ✅ 10. Load more function - เช็คจากจำนวนข้อมูลจริง vs total
+  // 10. Load more function - เช็คจากจำนวนข้อมูลจริง vs total
   const loadMore = useCallback(async () => {
-    // เช็คว่ายังมีข้อมูลเหลือใน database หรือไม่
     const hasMoreData = items.length < total;
 
-    // ป้องกันการเรียก API ซ้ำ
     if (!hasMoreData || isRefetching) {
       console.log("LoadMore blocked:", {
         hasMoreData,
@@ -373,7 +368,7 @@ export default function DashBoardContainer({
     await fetchData(nextPage, true);
   }, [items.length, total, nextPage, isRefetching, fetchData]);
 
-  // ✅ 11. Auto load more - เช็คจากจำนวนข้อมูลจริงและตำแหน่งที่ user กำลังดู
+  // 11. Auto load more - เช็คจากจำนวนข้อมูลจริงและตำแหน่งที่ user กำลังดู
   useEffect(() => {
     // คำนวณว่า user กำลังดูหน้าไหนจากข้อมูลที่มีอยู่
     const currentPageCount = Math.max(
@@ -414,7 +409,7 @@ export default function DashBoardContainer({
     loadMore,
   ]);
 
-  // ✅ 12. Retry function
+  // 12. Retry function
   const retry = useCallback(() => {
     setError(null);
     fetchData(1, false);

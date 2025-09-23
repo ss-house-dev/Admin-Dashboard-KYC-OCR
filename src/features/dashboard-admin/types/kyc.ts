@@ -24,7 +24,7 @@ export type IdcardDoc = {
   idNumber: string;
   lastNameEng: string;
   lastNameThai: string;
-  titleNameEng: string;   // บางครั้งอาจเป็น "null" (string) ตามตัวอย่าง
+  titleNameEng: string;   
   titleNameThai: string;
 };
 
