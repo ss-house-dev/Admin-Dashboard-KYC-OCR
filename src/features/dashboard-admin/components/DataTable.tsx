@@ -33,6 +33,7 @@ interface DataTableProps<TData, TValue> {
   className?: string;
   pagination?: PaginationState;
   onPaginationChange?: OnChangeFn<PaginationState>;
+  onView?: (row: TData) => void;
 }
 
 export function DataTable<TData, TValue>({
@@ -41,6 +42,7 @@ export function DataTable<TData, TValue>({
   className,
   pagination,
   onPaginationChange,
+  onView,
 }: DataTableProps<TData, TValue>) {
   const table = useReactTable({
     data,
@@ -107,6 +109,7 @@ export function DataTable<TData, TValue>({
                 <TableRow
                   key={row.id}
                   data-state={row.getIsSelected() && "selected"}
+                  onClick={() => onView?.(row.original)} 
                 >
                   {row.getVisibleCells().map((cell) => (
                     <TableCell key={cell.id}>
@@ -132,7 +135,7 @@ export function DataTable<TData, TValue>({
         </Table>
       </div>
 
-      {/* ✅ แสดง Pagination เฉพาะตอนมีข้อมูล */}
+      {/* แสดง Pagination เฉพาะตอนมีข้อมูล */}
       {table.getRowModel().rows?.length > 0 && (
         <div className="flex items-center justify-end space-x-2 py-4">
           <DataTablePagination table={table} />

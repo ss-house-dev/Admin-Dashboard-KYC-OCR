@@ -139,7 +139,7 @@ export default function DashBoardContainer({
         limit: String(limit),
       };
 
-      let specialSingleThai: string | null = null; 
+      let specialSingleThai: string | null = null;
 
       const qTrim = aq.trim();
       if (qTrim) {
@@ -178,7 +178,7 @@ export default function DashBoardContainer({
       if (endIso) params.endDate = endIso;
 
       console.log("Final query params:", params);
-      return { params, specialSingleThai }; 
+      return { params, specialSingleThai };
     },
     [aq, astatus, astart, aend]
   );
@@ -477,10 +477,17 @@ export default function DashBoardContainer({
       >
         <div className="min-h-0 overflow-auto p-8 w-full">
           <DataTable
-            columns={column}
+            columns={columns((row) => {
+              setSelected(row);
+              setDetailOpen(true);
+            })}
             data={items}
             pagination={pagination}
             onPaginationChange={setPagination}
+            onView={(row) => {
+              setSelected(row);
+              setDetailOpen(true);
+            }}
           />
         </div>
 

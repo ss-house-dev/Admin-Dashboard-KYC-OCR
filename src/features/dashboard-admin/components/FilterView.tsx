@@ -64,11 +64,8 @@ export function FilterView({
   onApply,
   onClear,
 }: Props) {
-  // เก็บเฉพาะ state "UI" ของ popover ภายใน component นี้
   const [openStart, setOpenStart] = React.useState(false);
   const [openEnd, setOpenEnd] = React.useState(false);
-
-  // 🔒 normalize today เป็นเที่ยงคืน เพื่อตัดปัญหา timezone
   const today = React.useMemo(() => {
     const t = new Date();
     t.setHours(0, 0, 0, 0);
@@ -178,10 +175,8 @@ export function FilterView({
                 mode="single"
                 captionLayout="dropdown"
                 selected={start}
-                // ✅ เลือกได้ถึงวันนี้เท่านั้น
                 disabled={[{ after: today }]}
                 onSelect={(d) => {
-                  // กันเลือกอนาคต (ถ้า component อนุญาตด้วยเหตุผลอื่น)
                   const picked = d && d > today ? today : d || undefined;
                   onChangeStart(picked);
                   if (picked && end && picked > end) onChangeEnd(undefined);
@@ -222,7 +217,6 @@ export function FilterView({
                 mode="single"
                 captionLayout="dropdown"
                 selected={end}
-                // ✅ ต้องไม่ก่อน start และไม่เกินวันนี้
                 disabled={
                   start
                     ? [{ before: start }, { after: today }]
@@ -234,7 +228,6 @@ export function FilterView({
                     setOpenEnd(false);
                     return;
                   }
-                  // clamp: ต่ำสุด = start, สูงสุด = today
                   let picked = d;
                   if (start && picked < start) picked = start;
                   if (picked > today) picked = today;
