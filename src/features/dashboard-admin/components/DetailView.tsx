@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import * as React from "react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
@@ -8,7 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Kycrequest } from "../components/column";
 import { cn } from "@/lib/utils";
-import { X, CheckCircle2, XCircle, AlertCircle, FileClock } from "lucide-react";
+import { X } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import DetailDataLog, { type DataLogVM } from "./DetailDataLog";
 
@@ -94,9 +95,11 @@ function Field({
   value?: React.ReactNode | null;
 }) {
   return (
-    <div className="space-y-1">
-      <p className="text-xs text-muted-foreground">{label}</p>
-      <p className="text-sm">{value ?? "-"}</p>
+    <div className="flex items-center justify-between w-full ">
+      <span className="text-xs font-normal">{label}</span>
+      <span className="text-sm font-normal ml-4 text-right truncate max-w-[60%]">
+        {value ?? "-"}
+      </span>
     </div>
   );
 }
@@ -104,47 +107,43 @@ function Field({
 function ImageSlot({
   src,
   alt,
-  label,
   height = "h-24",
+  fallback = "doc",
 }: {
   src?: string | null;
   alt: string;
-  label: string;
   height?: string;
+  fallback?: "doc" | "face";
 }) {
+  const fallbackSrc =
+    fallback === "face"
+      ? "/detail-view/no-people.jpg"
+      : "/detail-view/no-pictures.png";
+
+  const finalSrc = src && src.trim() !== "" ? src : fallbackSrc;
+
   return (
-    <div>
-      {src ? (
-        <img
-          src={src}
-          alt={alt}
-          className={cn("w-full rounded-md border object-cover", height)}
-        />
-      ) : (
-        <div
-          className={cn(
-            height,
-            "rounded-md border flex items-center justify-center text-sm text-muted-foreground"
-          )}
-        >
-          No Image
-        </div>
-      )}
-      <p className="mt-1 text-xs text-muted-foreground">{label}</p>
-    </div>
+    <img
+      src={finalSrc}
+      alt={alt}
+      loading="lazy"
+      className={cn("w-full rounded-md border object-cover", height)}
+    />
   );
 }
 
 function SectionFrame({
   title,
   children,
+  className,
 }: {
   title: string;
   children: React.ReactNode;
+  className?: string;
 }) {
   return (
-    <Card className="p-4">
-      <h3 className="mb-3 font-medium">{title}</h3>
+    <Card className={cn("p-4", className)}>
+      <h3 className="mb-4 font-semibold text-xl ">{title}</h3>
       {children}
     </Card>
   );
@@ -156,50 +155,57 @@ function statusTheme(status?: UiStatus) {
     case "Approved":
     case "Approved Override":
       return {
-        border: "border-emerald-400",
-        bg: "bg-emerald-50",
-        textMain: "text-emerald-700",
-        textLink: "text-emerald-700",
-        Icon: CheckCircle2,
+        border: "border border-[#008362]",
+        bg: "bg-white",
+        textMain: "text-emerald-700 text-sm",
+        textLink: "text-[#008362] text-sm",
+        iconSrc: "/mark/correct-mark.png",
+        iconAlt: "Approved",
       };
     case "Rejected":
     case "Rejected Override":
       return {
-        border: "border-rose-400",
-        bg: "bg-rose-50",
-        textMain: "text-rose-700",
-        textLink: "text-rose-700",
-        Icon: XCircle,
+        border: "border border-[#991B1B]",
+        bg: "bg-white",
+        textMain: "text-rose-700 text-sm",
+        textLink: "text-[#991B1B] text-sm",
+        iconSrc: "/mark/wrong-mark.png",
+        iconAlt: "Rejected",
       };
     default:
       return {
-        border: "border-amber-400",
-        bg: "bg-amber-50",
-        textMain: "text-amber-700",
-        textLink: "text-amber-700",
-        Icon: AlertCircle,
+        border: "border border-[#854D0E]",
+        bg: "bg-white",
+        textMain: "text-amber-700 text-sm",
+        textLink: "text-[#854D0E] text-sm",
+        iconSrc: "/mark/exclamation-mark.png",
+        iconAlt: "Pending",
       };
   }
 }
 
 function VerificationStatusBanner({ status }: { status?: UiStatus }) {
   const T = statusTheme(status);
-  const Icon = T.Icon;
   return (
-    <div className={cn("mx-4 mt-4 rounded-xl border p-4", T.border, T.bg)}>
-      <div className="flex items-center gap-3">
+    <div className={cn("m-4 rounded-xl border p-4", T.border, T.bg)}>
+      <div className="flex items-center gap-4">
         <div className="shrink-0">
-          <Icon className={cn("h-6 w-6", T.textMain)} />
+          <Image
+            src={T.iconSrc}
+            alt={T.iconAlt}
+            width={24}
+            height={24}
+            className="size-[52px]"
+            priority
+          />
         </div>
         <div>
-          <p className="text-sm font-medium text-foreground">
+          <p className="text-sm font-normal text-semibold">
             Verification Status
           </p>
-          <p className={cn("text-sm", T.textMain)}>
+          <p className={cn("text-sm text-normal text-black")}>
             Status :{" "}
-            <span className={cn("font-medium underline-offset-2", T.textLink)}>
-              {status ?? "-"}
-            </span>
+            <span className={cn("  ", T.textLink)}>{status ?? "-"}</span>
           </p>
         </div>
       </div>
@@ -237,174 +243,211 @@ export default function DetailView({
   return (
     <aside
       className={cn(
-        "border-l bg-background h-full overflow-hidden flex flex-col",
+        " bg-background h-full overflow-hidden flex flex-col",
         className
       )}
       style={{ width }}
       aria-hidden={!open}
     >
       {/* Header */}
-      <div className="flex items-center justify-between px-4">
+      <div className="flex items-center justify-between px-4 pt-4">
         <h2 className="font-semibold text-xl ">Application Details</h2>
         <Button variant="ghost" size="sm" onClick={onClose} aria-label="Close">
-          <X className="h-4 w-4 text-[#9CA3AF]" />
+          <X className="h-6 w-6 text-[#9CA3AF] size-6" />
         </Button>
       </div>
 
       {/* NEW: Status banner ABOVE tabs */}
       <VerificationStatusBanner status={visibleStatus} />
 
-      {/* Tabs header */}
-      <div className="px-4 pb-2 pt-3">
-        <Tabs
-          value={tab}
-          onValueChange={(v) => setTab(v as any)}
-          className="w-full"
-        >
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="verification" className="gap-2">
-              <CheckCircle2 className="h-4 w-4" />
-              Verification
-            </TabsTrigger>
-            <TabsTrigger value="data-log" className="gap-2">
-              <FileClock className="h-4 w-4" />
-              Data Log
-            </TabsTrigger>
-          </TabsList>
-        </Tabs>
-      </div>
-
       <Separator />
 
-      {/* Body per tab */}
+      {/* Body  tab */}
       <div className="flex-1 overflow-hidden">
         {/* Verification */}
         {tab === "verification" && (
           <ScrollArea className="h-full p-4">
+            {/* Tabs header */}
+            <div className="pb-4">
+              <Tabs
+                value={tab}
+                onValueChange={(v) => setTab(v as any)}
+                className="w-full"
+              >
+                {(() => {
+                  const tabsListCls = cn(
+                    "flex w-full max-w-[352px] p-1 justify-center rounded-[50px] bg-[#ECECF0]/80",
+                    "gap-2"
+                  );
+
+                  const triggerCls = cn(
+                    "flex-none font-normal text-sm",
+                    "data-[state=active]:bg-white",
+                    "data-[state=active]:rounded-[50px]",
+                    "data-[state=active]:px-3 data-[state=active]:py-1",
+                    "data-[state=active]:shadow-none",
+                    "data-[state=active]:outline-none data-[state=active]:ring-0"
+                  );
+
+                  return (
+                    <TabsList className={tabsListCls}>
+                      <TabsTrigger value="verification" className={triggerCls}>
+                        <Image
+                          src="/mark/check-circle.svg"
+                          alt="Verification"
+                          width={16}
+                          height={16}
+                          className="inline-block"
+                          priority
+                        />
+                        <span className="pl-6 pr-6">Verification</span>
+                      </TabsTrigger>
+
+                      <TabsTrigger value="data-log" className={triggerCls}>
+                        <Image
+                          src="/mark/hard-drive.svg"
+                          alt="Data Log"
+                          width={16}
+                          height={16}
+                          className="inline-block"
+                          priority
+                        />
+                        <span className="pl-6 pr-6">Data Log</span>
+                      </TabsTrigger>
+                    </TabsList>
+                  );
+                })()}
+              </Tabs>
+            </div>
+
             {!data && !detail ? (
               <p className="text-sm text-muted-foreground">No selection</p>
             ) : (
               <div className="space-y-4 text-sm">
-                {/* Transaction card (ย้าย status ออกแล้ว) */}
-                <Card className="p-4">
-                  <div className="flex items-center justify-between gap-4">
-                    <div className="space-y-1">
-                      <p className="text-sm text-muted-foreground">
-                        Transaction
-                      </p>
-                      <p className="font-medium">
-                        {detail?.transactionNo ?? data?.transactionNo ?? "-"}
-                      </p>
-                    </div>
-                    <StatusBadge status={visibleStatus} />
-                  </div>
-                </Card>
-
-                {/* ID Card Section */}
-                <SectionFrame title="ID Card Verification">
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="col-span-2">
-                      <ImageSlot
-                        src={detail?.idcardImageUrl}
-                        alt="ID Card"
-                        label="ID Card"
-                        height="h-32"
+                {/* ID Card Section (ฐานอ้างอิง) */}
+                <SectionFrame
+                  title="ID Card Verification"
+                  className="border-0 p-0 gap-0 shadow-none ring-0 "
+                >
+                  <div className="bg-[#F9FAFC]">
+                    <div className="py-6 px-4 space-y-4">
+                      <div className="col-span-2">
+                        <ImageSlot
+                          src={detail?.idcardImageUrl}
+                          alt="ID Card"
+                          height="h-32"
+                          fallback="doc"
+                        />
+                      </div>
+                      <Field
+                        label="Full Name (TH)"
+                        value={detail?.fullNameThai}
                       />
-                    </div>
-                    <Field
-                      label="Full Name (TH)"
-                      value={detail?.fullNameThai}
-                    />
-                    <Field
-                      label="Full Name (ENG)"
-                      value={detail?.fullNameEng}
-                    />
-                    <Field label="ID Number" value={detail?.idNumber} />
-                    <Field label="Laser ID" value={detail?.laserId} />
-                    <Field
-                      label="Date of Birth"
-                      value={fmtDate(detail?.dateOfBirth)}
-                    />
-                    <Field
-                      label="Date of Expiry"
-                      value={fmtDate(detail?.dateOfExpiry)}
-                    />
-                  </div>
-                </SectionFrame>
-
-                {/* Face Section */}
-                <SectionFrame title="Face Verification">
-                  <div className="grid grid-cols-2 gap-3">
-                    <ImageSlot
-                      src={detail?.idPhotoUrl}
-                      alt="ID Photo"
-                      label="ID Photo"
-                    />
-                    <ImageSlot
-                      src={detail?.selfieUrl}
-                      alt="Selfie"
-                      label="Selfie"
-                    />
-                    <div className="col-span-2">
-                      {(() => {
-                        const pct = detail?.faceMatchPercent ?? null;
-                        const grade = gradeConfidence(pct);
-                        return (
-                          <div className="flex items-center gap-2">
-                            <span>
-                              Matching Confidence:{" "}
-                              <b>{pct != null ? `${Math.round(pct)}%` : "-"}</b>
-                            </span>
-                            <Badge
-                              className={cn(
-                                "border-none",
-                                grade === "High" &&
-                                  "bg-green-100 text-green-700",
-                                grade === "Moderate" &&
-                                  "bg-yellow-100 text-yellow-800",
-                                grade === "Low" && "bg-red-100 text-red-700"
-                              )}
-                            >
-                              {grade}
-                            </Badge>
-                          </div>
-                        );
-                      })()}
+                      <Field
+                        label="Full Name (ENG)"
+                        value={detail?.fullNameEng}
+                      />
+                      <Field label="ID Number" value={detail?.idNumber} />
+                      <Field label="Laser ID" value={detail?.laserId} />
+                      <Field
+                        label="Date of Birth"
+                        value={fmtDate(detail?.dateOfBirth)}
+                      />
+                      <Field
+                        label="Date of Expiry"
+                        value={fmtDate(detail?.dateOfExpiry)}
+                      />
                     </div>
                   </div>
                 </SectionFrame>
 
-                {/* Bank Section */}
-                <SectionFrame title="Bank Verification">
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="col-span-2">
-                      <ImageSlot
-                        src={detail?.bankBookImageUrl}
-                        alt="Bank book"
-                        label="Bank book"
-                        height="h-28"
-                      />
+                {/* Face Section (ทำสไตล์ให้เหมือน ID Card Section) */}
+                <SectionFrame
+                  title="Face Verification"
+                  className="border-0 p-0 gap-0 shadow-none ring-0 "
+                >
+                  <div className="bg-[#F9FAFC]">
+                    <div className="py-6 px-4 space-y-4">
+                      <div className="grid grid-cols-2 gap-3">
+                        <ImageSlot
+                          src={detail?.idPhotoUrl}
+                          alt="ID Photo"
+                          fallback="face"
+                        />
+                        <ImageSlot
+                          src={detail?.selfieUrl}
+                          alt="Selfie"
+                          fallback="face"
+                        />
+                        <div className="col-span-2">
+                          {(() => {
+                            const pct = detail?.faceMatchPercent ?? null;
+                            const grade = gradeConfidence(pct);
+                            return (
+                              <div className="flex items-center gap-2">
+                                <span>
+                                  Matching Confidence:{" "}
+                                  <b>
+                                    {pct != null ? `${Math.round(pct)}%` : "-"}
+                                  </b>
+                                </span>
+                                <Badge
+                                  className={cn(
+                                    "border-none",
+                                    grade === "High" &&
+                                      "bg-green-100 text-green-700",
+                                    grade === "Moderate" &&
+                                      "bg-yellow-100 text-yellow-800",
+                                    grade === "Low" && "bg-red-100 text-red-700"
+                                  )}
+                                >
+                                  {grade}
+                                </Badge>
+                              </div>
+                            );
+                          })()}
+                        </div>
+                      </div>
                     </div>
-                    <Field label="Account Name" value={detail?.accountName} />
-                    <Field
-                      label="Account Number"
-                      value={detail?.accountNumber}
-                    />
-                    <Field label="Bank" value={detail?.bank} />
-                    <Field label="Branch" value={detail?.branch} />
-                    <div className="col-span-2">
-                      <div className="flex items-center gap-2">
-                        <span>Name Matching:</span>
-                        <Badge
-                          className={cn(
-                            "border-none",
-                            detail?.bankNameMatch
-                              ? "bg-green-100 text-green-700"
-                              : "bg-red-100 text-red-700"
-                          )}
-                        >
-                          {detail?.bankNameMatch ? "Match" : "Not match"}
-                        </Badge>
+                  </div>
+                </SectionFrame>
+
+                {/* Bank Section (ทำสไตล์ให้เหมือน ID Card Section) */}
+                <SectionFrame
+                  title="Bank Verification"
+                  className="border-0 p-0 gap-0 shadow-none ring-0 "
+                >
+                  <div className="bg-[#F9FAFC]">
+                    <div className="py-6 px-4 space-y-4">
+                      <div className="col-span-2">
+                        <ImageSlot
+                          src={detail?.bankBookImageUrl}
+                          alt="Bank book"
+                          height="h-28"
+                          fallback="doc"
+                        />
+                      </div>
+                      <Field label="Account Name" value={detail?.accountName} />
+                      <Field
+                        label="Account Number"
+                        value={detail?.accountNumber}
+                      />
+                      <Field label="Bank" value={detail?.bank} />
+                      <Field label="Branch" value={detail?.branch} />
+                      <div className="col-span-2">
+                        <div className="flex items-center gap-2">
+                          <span className="text-sx font-normal">Name Matching:</span>
+                          <Badge
+                            className={cn(
+                              "border-none",
+                              detail?.bankNameMatch
+                                ? "bg-green-100 text-green-700"
+                                : "bg-red-100 text-red-700"
+                            )}
+                          >
+                            {detail?.bankNameMatch ? "Match" : "Not match"}
+                          </Badge>
+                        </div>
                       </div>
                     </div>
                   </div>
