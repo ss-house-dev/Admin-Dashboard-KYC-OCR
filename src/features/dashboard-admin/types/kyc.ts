@@ -30,6 +30,10 @@ export type IdcardDoc = {
 
 export type BookbankOrigin = {
   accountNo: string;
+  accountNameThai: string;
+  accountNameEng: string;
+  bankName: string;
+  branchName: string;
   createdAt: string;
   updatedAt: string;
 };
@@ -51,15 +55,19 @@ export type KycRequestApi = {
   idcardOrigin: IdcardDoc;
   idcardEdit: IdcardDoc;
   bookbankOrigin: BookbankOrigin;
+  bookbankEdit: BookbankOrigin;
   images: unknown[];
   id: string;
 };
 
 export type CompanyAllData = {
-  total: number;
-  page: number;
-  pages: number;
-  limit: number;
-  filtersApplied: KycFiltersApplied;
-  items: KycRequestApi[];
+  companyId: string;
+  data: {
+    total: number;
+    page: number;
+    pages: number;
+    limit: number;
+    filtersApplied: KycFiltersApplied;
+    items: KycRequestApi[];
+  };
 };

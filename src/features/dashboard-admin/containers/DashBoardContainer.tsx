@@ -2,12 +2,13 @@
 
 import * as React from "react";
 import { toYmd } from "../utils/datetime";
-import { columns, Kycrequest } from "../components/column";
+import type { KycRequestApi } from "../types/kyc";
+import { useKycData } from "../hooks/useKycData";
+import { columns } from "../components/column";
 import { DataTable } from "../components/DataTable";
 import { SearchView } from "../components/SearchView";
 import { FilterView } from "../components/FilterView";
 import DetailView from "../components/DetailView";
-import { useKycData } from "../hooks/useKycData";
 import { LoadingSpinner } from "@/components/LoadingSpinner";
 import { ErrorView } from "@/components/ErrorView";
 
@@ -20,12 +21,15 @@ export default function DashBoardContainer() {
     apply,
     clearAll,
     items,
+    rawData,
     pagination,
     setPagination,
   } = useKycData();
 
   const [detailOpen, setDetailOpen] = React.useState(false);
-  const [selected, setSelected] = React.useState<Kycrequest | null>(null);
+  const [selected, setSelected] = React.useState<KycRequestApi | null>(null);
+
+  console.log("DataTable items:", items);
 
   if (isLoading) return <LoadingSpinner message="Loading company data…" />;
   if (error) return <ErrorView error={error} />;
@@ -75,23 +79,25 @@ export default function DashBoardContainer() {
         <div className="min-h-0 overflow-auto p-8 w-full">
           <DataTable
             columns={columns((row) => {
-              setSelected(row);
+              // หา object จริงจาก rawData.items โดย match transactionNo หรือ id
+              const found = rawData?.data.items.find(
+                (i) =>
+                  i.correlationId === row.transactionNo ||
+                  i.id === row.transactionNo
+              );
+              setSelected(found ?? null);
               setDetailOpen(true);
             })}
             data={items}
             pagination={pagination}
             onPaginationChange={setPagination}
-            onView={(row) => {
-              setSelected(row);
-              setDetailOpen(true);
-            }}
           />
         </div>
 
         <DetailView
           open={detailOpen}
           width={360}
-          data={selected}
+          data={selected} 
           onClose={() => setDetailOpen(false)}
         />
       </section>

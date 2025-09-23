@@ -1,11 +1,9 @@
-"use client";
-
 import { useState, useEffect, useCallback } from "react";
 import { type PaginationState } from "@tanstack/react-table";
 import { toStartOfDayZ, toEndOfDayZ } from "../utils/datetime";
 import { Filters, getRowTs, toDisplayRow } from "../utils/kycHelpers";
 import { apiClient } from "../libs/apiClient";
-import type { KycRequestApi } from "../types/kyc";
+import type { CompanyAllData } from "../types/kyc";
 import type { Kycrequest } from "../components/column";
 
 export function useKycData(defaultValues?: Partial<Filters>) {
@@ -14,10 +12,13 @@ export function useKycData(defaultValues?: Partial<Filters>) {
   const [isRefetching, setIsRefetching] = useState(false);
   const [error, setError] = useState<Error | null>(null);
 
-  // Data
+  // Data สำหรับตาราง
   const [items, setItems] = useState<(Kycrequest & { __keys: string })[]>([]);
   const [total, setTotal] = useState<number>(0);
   const [nextPage, setNextPage] = useState<number>(1);
+
+  // Data เต็มจาก API
+  const [rawData, setRawData] = useState<CompanyAllData | null>(null);
 
   // Pagination
   const [pagination, setPagination] = useState<PaginationState>({
@@ -25,7 +26,7 @@ export function useKycData(defaultValues?: Partial<Filters>) {
     pageSize: 10,
   });
 
-  // Draft Filters (ค่าที่ user พิมพ์/เลือก)
+  // Draft Filters
   const [draftFilters, setDraftFilters] = useState<Filters>({
     q: defaultValues?.q ?? "",
     status: defaultValues?.status ?? "all",
@@ -33,7 +34,7 @@ export function useKycData(defaultValues?: Partial<Filters>) {
     endDate: defaultValues?.endDate ?? "",
   });
 
-  // Applied Filters (ค่าที่ apply แล้ว)
+  // Applied Filters
   const [appliedFilters, setAppliedFilters] = useState<Filters>(draftFilters);
 
   // helpers
@@ -93,26 +94,41 @@ export function useKycData(defaultValues?: Partial<Filters>) {
         );
 
         let newItems: (Kycrequest & { __keys: string })[] = [];
+        let fullResponse: CompanyAllData | null = null;
 
         if (specialSingleThai) {
           const [firstRes, lastRes] = await Promise.all([
-            apiClient.get<{ data: { items: KycRequestApi[] } }>("/api/company", {
+            apiClient.get<CompanyAllData>("/api/company", {
               params: { ...params, firstNameThai: specialSingleThai },
             }),
-            apiClient.get<{ data: { items: KycRequestApi[] } }>("/api/company", {
+            apiClient.get<CompanyAllData>("/api/company", {
               params: { ...params, lastNameThai: specialSingleThai },
             }),
           ]);
-          newItems = [
+          const mergedItems = [
             ...(firstRes.data?.data?.items ?? []),
             ...(lastRes.data?.data?.items ?? []),
-          ].map(toDisplayRow);
+          ];
+          newItems = mergedItems.map(toDisplayRow);
+
+          // เก็บ fullResponse ล่าสุด (อันใดอันหนึ่งก็ได้ แต่ merged เอาไว้ใน items)
+          fullResponse = {
+            ...firstRes.data,
+            data: {
+              ...firstRes.data.data,
+              items: mergedItems,
+            },
+          };
         } else {
-          const res = await apiClient.get<{ data: { items: KycRequestApi[] } }>(
-            "/api/company",
-            { params }
-          );
-          newItems = (res.data?.data?.items ?? []).map(toDisplayRow);
+          const res = await apiClient.get<CompanyAllData>("/api/company", {
+            params,
+          });
+          console.log("API raw response:", res.data);
+          fullResponse = res.data;
+          // ✅ ต้องเข้าถึง items ที่อยู่ใน data
+          const rawItems = res.data?.data?.items ?? [];
+          newItems = rawItems.map(toDisplayRow);
+          console.log("Mapped items:", newItems);
         }
 
         const sorted = newItems.sort((a, b) => getRowTs(b) - getRowTs(a));
@@ -120,7 +136,10 @@ export function useKycData(defaultValues?: Partial<Filters>) {
         if (append) {
           setItems((prev) => {
             const existingIds = new Set(prev.map((i) => i.transactionNo));
-            return [...prev, ...sorted.filter((i) => !existingIds.has(i.transactionNo))];
+            return [
+              ...prev,
+              ...sorted.filter((i) => !existingIds.has(i.transactionNo)),
+            ];
           });
         } else {
           setItems(sorted);
@@ -129,6 +148,7 @@ export function useKycData(defaultValues?: Partial<Filters>) {
 
         setTotal(sorted.length);
         setNextPage(page + 1);
+        setRawData(fullResponse); 
         setError(null);
       } catch (e) {
         setError(e as Error);
@@ -149,10 +169,17 @@ export function useKycData(defaultValues?: Partial<Filters>) {
   }, [draftFilters]);
 
   const clearAll = useCallback(() => {
-    const cleared: Filters = { q: "", status: "all", startDate: "", endDate: "" };
+    const cleared: Filters = {
+      q: "",
+      status: "all",
+      startDate: "",
+      endDate: "",
+    };
     setDraftFilters(cleared);
     setAppliedFilters(cleared);
   }, []);
+
+  console.log("DataTable items:", items);
 
   return {
     isLoading,
@@ -160,6 +187,7 @@ export function useKycData(defaultValues?: Partial<Filters>) {
     error,
     items,
     total,
+    rawData, 
     pagination,
     setPagination,
     fetchData,
