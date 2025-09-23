@@ -324,12 +324,12 @@ export default function DetailView({
               <p className="text-sm text-muted-foreground">No selection</p>
             ) : (
               <div className="space-y-4 text-sm">
-                {/* ID Card Section (ฐานอ้างอิง) */}
+                {/* ID Card Section */}
                 <SectionFrame
                   title="ID Card Verification"
                   className="border-0 p-0 gap-0 shadow-none ring-0 "
                 >
-                  <div className="bg-[#F9FAFC]">
+                  <div className="bg-[#F9FAFC] rounded-[12px]">
                     <div className="py-6 px-4 space-y-4">
                       <div className="col-span-2">
                         <ImageSlot
@@ -361,63 +361,104 @@ export default function DetailView({
                   </div>
                 </SectionFrame>
 
-                {/* Face Section (ทำสไตล์ให้เหมือน ID Card Section) */}
+                {/* Face Section */}
                 <SectionFrame
                   title="Face Verification"
                   className="border-0 p-0 gap-0 shadow-none ring-0 "
                 >
-                  <div className="bg-[#F9FAFC]">
-                    <div className="py-6 px-4 space-y-4">
-                      <div className="grid grid-cols-2 gap-3">
-                        <ImageSlot
-                          src={detail?.idPhotoUrl}
-                          alt="ID Photo"
-                          fallback="face"
-                        />
-                        <ImageSlot
-                          src={detail?.selfieUrl}
-                          alt="Selfie"
-                          fallback="face"
-                        />
-                        <div className="col-span-2">
-                          {(() => {
-                            const pct = detail?.faceMatchPercent ?? null;
-                            const grade = gradeConfidence(pct);
-                            return (
-                              <div className="flex items-center gap-2">
-                                <span>
-                                  Matching Confidence:{" "}
-                                  <b>
-                                    {pct != null ? `${Math.round(pct)}%` : "-"}
-                                  </b>
-                                </span>
-                                <Badge
-                                  className={cn(
-                                    "border-none",
-                                    grade === "High" &&
-                                      "bg-green-100 text-green-700",
-                                    grade === "Moderate" &&
-                                      "bg-yellow-100 text-yellow-800",
-                                    grade === "Low" && "bg-red-100 text-red-700"
-                                  )}
-                                >
-                                  {grade}
-                                </Badge>
-                              </div>
-                            );
-                          })()}
+                  <div className="bg-[#F9FAFC] rounded-[12px]">
+                    <div className="p-4 flex items-center gap-2">
+                      {/* ซ้าย: ID Photo / Selfie */}
+                      <div className="flex gap-2">
+                        <div className="flex flex-col items-center gap-3">
+                          <span className="text-base font-normal">
+                            ID Photo
+                          </span>
+                          {/* กรอบขาวบาง ๆ รอบรูป */}
+                          <div className="rounded-xl overflow-hidden bg-white p-1 shadow-sm">
+                            <ImageSlot
+                              src={detail?.idPhotoUrl}
+                              alt="ID Photo"
+                              height="h-24"
+                              fallback="face"
+                            />
+                          </div>
                         </div>
+
+                        <div className="flex flex-col items-center gap-3">
+                          <span className="text-base font-normal ">Selfie</span>
+                          <div className="rounded-xl overflow-hidden bg-white p-1 shadow-sm">
+                            <ImageSlot
+                              src={detail?.selfieUrl}
+                              alt="Selfie"
+                              height="h-24"
+                              fallback="face"
+                            />
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* ขวา: % + ข้อความ + Badge ระดับ */}
+                      <div className="ml-auto flex flex-col items-center">
+                        {(() => {
+                          const pct = detail?.faceMatchPercent ?? null;
+                          const pctText =
+                            pct != null ? `${Math.round(pct)}%` : "-";
+                          const grade = gradeConfidence(pct);
+
+                          const pctColor =
+                            grade === "High"
+                              ? "text-[#10B981]" // เขียว
+                              : grade === "Moderate"
+                              ? "text-[#D97706]" // เหลือง
+                              : grade === "Low"
+                              ? "text-[#EF4444]" // แดง
+                              : "text-foreground";
+
+                          const badgeCls =
+                            grade === "High"
+                              ? "bg-[#E8F7EE] text-[#16A34A] border border-[#A7F3D0]"
+                              : grade === "Moderate"
+                              ? "bg-[#FFF7E6] text-[#B45309] border border-[#FCD34D]"
+                              : grade === "Low"
+                              ? "bg-[#FEE2E2] text-[#B91C1C] border border-[#FCA5A5]"
+                              : "bg-muted text-muted-foreground";
+
+                          return (
+                            <>
+                              <div
+                                className={cn(
+                                  "font-semibold leading-none text-5xl",
+                                  pctColor
+                                )}
+                              >
+                                {pctText}
+                              </div>
+                              <div className="mt-3 text-[13px] font-normal items-center whitespace-nowrap">
+                                Match confidence
+                              </div>
+                              <Badge
+                                className={cn(
+                                  "mt-2 rounded-full px-3 py-1 text-sm",
+                                  badgeCls
+                                )}
+                              >
+                                {grade}
+                              </Badge>
+                            </>
+                          );
+                        })()}
                       </div>
                     </div>
                   </div>
                 </SectionFrame>
 
-                {/* Bank Section (ทำสไตล์ให้เหมือน ID Card Section) */}
+                {/* Bank Section */}
                 <SectionFrame
                   title="Bank Verification"
                   className="border-0 p-0 gap-0 shadow-none ring-0 "
                 >
-                  <div className="bg-[#F9FAFC]">
+                  <div className="bg-[#F9FAFC] rounded-[12px]">
                     <div className="py-6 px-4 space-y-4">
                       <div className="col-span-2">
                         <ImageSlot
