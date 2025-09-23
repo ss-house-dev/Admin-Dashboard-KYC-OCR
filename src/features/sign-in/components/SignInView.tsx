@@ -98,7 +98,7 @@ export default function SignInView({
                 "py-3 text-white text-base"
               )}
             >
-              {isSubmitting ? "Logging in..." : "Login"}
+              {isSubmitting ? "Signing In..." : "Sign In"}
             </button>
 
             <p className="mt-4 text-center text-xs  text-black">

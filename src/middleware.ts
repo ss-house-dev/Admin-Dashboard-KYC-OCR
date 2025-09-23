@@ -1,25 +1,50 @@
-import { NextResponse, NextRequest } from "next/server";
-import { getToken } from "next-auth/jwt";
+import { withAuth } from "next-auth/middleware";
+import type { NextRequestWithAuth } from "next-auth/middleware";
+import { NextResponse } from "next/server";
 
-export default async function middleware(req: NextRequest) {
-  const token = await getToken({ req, secret: process.env.NEXTAUTH_SECRET });
-  const url = req.nextUrl; 
+const AUTH_PAGE_REGEX = /^\/((auth\/(signin|signup))|(sign-in|sign-up))\/?$/i;
+const PROTECTED_PREFIXES = ["/admin-dashboard"]; // ต้องล็อกอินก่อนเข้า
 
-  if (!token) {
-    if (url.pathname.startsWith("/sign-in")) return NextResponse.next();
-    return NextResponse.redirect(new URL("/sign-in", url));
+export default withAuth(
+  (req: NextRequestWithAuth) => {
+    const { pathname } = req.nextUrl;
+    const isAuth = !!req.nextauth.token;
+
+    const isAuthPage = AUTH_PAGE_REGEX.test(pathname);
+    const isProtected = PROTECTED_PREFIXES.some((p) => pathname.startsWith(p));
+
+    // ยังไม่ล็อกอิน + พยายามเข้าแดชบอร์ด → คง URL เดิม แต่แสดงหน้า /sign-in
+    if (!isAuth && isProtected) {
+      const url = req.nextUrl.clone();
+      url.pathname = "/sign-in"; // <<-- หน้า Sign-in ที่ "มีอยู่จริง"
+      return NextResponse.rewrite(url);
+    }
+
+    // ล็อกอินแล้ว แต่จะเข้า sign-in/sign-up → ส่งกลับแดชบอร์ด
+    if (isAuth && isAuthPage) {
+      const url = req.nextUrl.clone();
+      url.pathname = "/admin-dashboard";
+      url.search = "";
+      return NextResponse.redirect(url);
+    }
+
+    return NextResponse.next();
+  },
+  {
+    callbacks: {
+      // ให้ middleware ทำงานเสมอ เราจะเป็นคนตัดสินใจ rewrite/redirect เอง
+      authorized: () => true,
+    },
+    // ไม่ต้องกำหนด pages.signIn ที่นี่ เพื่อกัน next-auth แทรกทางเอง
   }
+);
 
-  const rtx = (token as any).refreshTokenExpires as number | undefined;
-  if (rtx && Date.now() >= rtx) {
-    return NextResponse.redirect(
-      new URL(`/api/auth/signout?callbackUrl=${encodeURIComponent("/sign-in")}`, url)
-    );
-  }
-
-  return NextResponse.next();
-}
-
+// ให้ทำงานเฉพาะเส้นทางที่เกี่ยวข้อง
 export const config = {
-  matcher: ["/admin-dashboard/:path*"],
+  matcher: [
+    "/sign-in",
+    "/sign-up",
+    "/auth/:path*",          // เผื่อคุณมีเส้นทาง auth เก่า
+    "/admin-dashboard/:path*",
+  ],
 };

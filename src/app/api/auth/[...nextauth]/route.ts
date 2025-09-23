@@ -6,6 +6,7 @@ import type { JWT } from "next-auth/jwt";
 const API_BASE_INTERNAL =
   process.env.API_BASE_INTERNAL || "http://141.11.156.52:3203";
 
+/* ===================== Types ===================== */
 type SignInSuccess = {
   id: string;
   name?: string;
@@ -43,10 +44,12 @@ type AppSession = Session & {
     name?: string | null;
     role?: string;
   };
-  accessToken?: string;
-  refreshToken?: string;
+  // ตั้งใจ "ไม่" ปล่อย token ออก client เพื่อความปลอดภัย
+  // accessToken?: string;
+  // refreshToken?: string;
 };
 
+/* ===================== Utils ===================== */
 function isObject(v: unknown): v is Record<string, unknown> {
   return typeof v === "object" && v !== null;
 }
@@ -55,9 +58,12 @@ function getMessage(v: unknown): string | undefined {
   return undefined;
 }
 
+/* =================== NextAuth ==================== */
 export const authOptions: NextAuthOptions = {
+  // ให้ตรงกับ middleware ที่ redirect -> /auth/signin
   pages: { signIn: "/sign-in" },
   session: { strategy: "jwt" },
+
   providers: [
     Credentials({
       name: "Credentials",
@@ -70,7 +76,6 @@ export const authOptions: NextAuthOptions = {
         const password = String(creds?.password ?? "");
 
         const url = new URL("/auth/signin", API_BASE_INTERNAL).toString();
-
         const res = await fetch(url, {
           method: "POST",
           headers: {
@@ -85,7 +90,7 @@ export const authOptions: NextAuthOptions = {
         try {
           data = JSON.parse(text);
         } catch {
-          // ignore
+          // ignore parsing error -> handled by !res.ok branch
         }
 
         if (!res.ok || !isObject(data)) {
@@ -96,7 +101,6 @@ export const authOptions: NextAuthOptions = {
         }
 
         const d = data as SignInResponse;
-
         return {
           id: d.user?._id ?? d._id ?? username,
           name: d.user?.username ?? d.username ?? username,
@@ -108,11 +112,12 @@ export const authOptions: NextAuthOptions = {
       },
     }),
   ],
+
   callbacks: {
     async jwt({ token, user }) {
       const t = token as AppJWT;
 
-      // เซ็ตค่าตอน login ครั้งแรก
+      // เซ็ตค่าเมื่อ login ครั้งแรก
       if (user) {
         const u = user as any;
         t.name = u.name ?? t.name ?? null;
@@ -194,11 +199,38 @@ export const authOptions: NextAuthOptions = {
         name: s.user?.name ?? t.name ?? null,
         role: t.role,
       };
+
+      // ถ้าจำเป็นต้องใช้ token ฝั่ง client ค่อยเปิดสองบรรทัดนี้
       // s.accessToken = t.accessToken;
       // s.refreshToken = t.refreshToken;
+
       return s;
     },
   },
+
+  /**
+   * signOut จากที่ไหนก็ตาม -> ยิงไป backend เพื่อ revoke/logout
+   * หมายเหตุ: ไม่ block การ logout แม้ backend พัง (ทำ best-effort)
+   */
+  events: {
+    async signOut({ token }) {
+      try {
+        const t = token as AppJWT;
+        if (!t?.accessToken) return;
+        await fetch(`${API_BASE_INTERNAL}/auth/logout`, {
+          method: "POST",
+          headers: {
+            accept: "*/*",
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ accessToken: t.accessToken }),
+        });
+      } catch {
+        // ignore
+      }
+    },
+  },
+
 };
 
 const handler = NextAuth(authOptions);
