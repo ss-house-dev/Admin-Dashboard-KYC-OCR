@@ -2,7 +2,6 @@
 
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
-import { Kycrequest } from "../components/column";
 import { cn } from "@/lib/utils";
 import type { KycRequestApi } from "../types/kyc";
 import { X } from "lucide-react";
