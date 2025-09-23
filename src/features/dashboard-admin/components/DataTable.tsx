@@ -6,6 +6,8 @@ import {
   getCoreRowModel,
   getPaginationRowModel,
   useReactTable,
+  type PaginationState,
+  type OnChangeFn,  
 } from "@tanstack/react-table";
 import {
   Table,
@@ -29,18 +31,28 @@ interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];
   data: TData[];
   className?: string;
+
+  // ✅ เสริม: คุม pagination จากภายนอก (optional)
+  pagination?: PaginationState;
+  onPaginationChange?: OnChangeFn<PaginationState>;
 }
 
 export function DataTable<TData, TValue>({
   columns,
   data,
   className,
+  pagination,
+  onPaginationChange,
 }: DataTableProps<TData, TValue>) {
+
   const table = useReactTable({
     data,
     columns,
     getCoreRowModel: getCoreRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
+    // ✅ ถ้า container ส่ง state เข้ามา ให้ถือว่าเป็น controlled
+    state: pagination ? { pagination } : undefined,
+    onPaginationChange, // ✅
   });
 
   return (
@@ -89,7 +101,7 @@ export function DataTable<TData, TValue>({
               </TableRow>
             ))}
           </TableHeader>
-          <TableBody >
+          <TableBody>
             {table.getRowModel().rows?.length ? (
               table.getRowModel().rows.map((row) => (
                 <TableRow
