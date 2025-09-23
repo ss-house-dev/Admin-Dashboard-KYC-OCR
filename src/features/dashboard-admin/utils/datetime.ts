@@ -1,4 +1,3 @@
-
 export function toYmd(date?: Date): string {
   if (!date) return "";
   // ชดเชย offset เพื่อให้ได้ "local date" ก่อนค่อยแปลงเป็น ISO string
@@ -28,4 +27,20 @@ export function formatFromIso(iso?: string): { date: string; time: string } {
   const ss = String(dt.getSeconds()).padStart(2, "0");
 
   return { date: `${dd}-${mm}-${yyyy}`, time: `${hh}:${mi}:${ss}` };
+}
+
+/**
+ * แปลง Date → ISO string ที่เป็นช่วงเวลาเริ่มต้นวัน (00:00:00Z)
+ */
+export function toStartOfDayZ(d?: Date) {
+  const ymd = toYmd(d);
+  return ymd ? `${ymd}T00:00:00Z` : undefined;
+}
+
+/**
+ * แปลง Date → ISO string ที่เป็นช่วงเวลาสิ้นสุดวัน (23:59:59Z)
+ */
+export function toEndOfDayZ(d?: Date) {
+  const ymd = toYmd(d);
+  return ymd ? `${ymd}T23:59:59Z` : undefined;
 }
