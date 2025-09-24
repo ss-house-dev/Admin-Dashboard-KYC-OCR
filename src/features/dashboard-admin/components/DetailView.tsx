@@ -213,6 +213,63 @@ function VerificationStatusBanner({ status }: { status?: UiStatus }) {
   );
 }
 
+function ActionFooter({ status }: { status?: UiStatus }) {
+  if (!status) return null;
+
+  // กรณี Override แล้ว → โชว์แบนเนอร์เตือนและปิดการกระทำต่อ
+  if (status === "Rejected Override" || status === "Approved Override") {
+    return (
+      <div className="flex flex-1 justify-between items-center p-4 gap-2 rounded-[8px] text-black bg-[var(--Primary-Alert,_#FFB201)]">
+        <Image
+          src="/mark/warning.svg"
+          alt="Notice"
+          width={24}
+          height={24}
+          className="size-[24px]"
+        />
+        <p className="text-xs font-normal">
+          This KYC verification has been overrided and no further actions are
+          requires
+        </p>
+      </div>
+    );
+  }
+
+  // Pending → แสดงปุ่ม Approve/Reject คู่กัน
+  if (status === "Pending") {
+    return (
+      <div className="flex items-center justify-center gap-2">
+        <Button className="flex-1 p-2 rounded-[12px] bg-[#17B26A] text-lg font-normal text-white hover:bg-[#067647]">
+          Approve
+        </Button>
+        <Button className="flex-1 p-2 rounded-[12px] bg-[#D92D20] text-lg font-normal text-white hover:bg-[#912018]">
+          Reject
+        </Button>
+      </div>
+    );
+  }
+
+  // Approved → แสดงปุ่มยาว Override & Rejected
+  if (status === "Approved") {
+    return (
+      <Button className="w-full rounded-[12px] bg-[#D92D20] p-2 text-lg font-normal text-white hover:bg-[#912018]">
+        Override & Rejected
+      </Button>
+    );
+  }
+
+  // Rejected → แสดงปุ่มยาว Override & Approve
+  if (status === "Rejected") {
+    return (
+      <Button className="w-full rounded-[12px] bg-[#17B26A] p-2 text-lg font-normal text-white hover:bg-[#067647]">
+        Override & Approve
+      </Button>
+    );
+  }
+
+  return null;
+}
+
 /* ============ Main ============ */
 export default function DetailView({
   open,
@@ -222,6 +279,7 @@ export default function DetailView({
   detail,
   className,
   footer,
+  showFooterDivider = false,
 }: {
   open: boolean;
   onClose: () => void;
@@ -230,10 +288,38 @@ export default function DetailView({
   detail?: DetailVM | null;
   className?: string;
   footer?: React.ReactNode;
+  showFooterDivider?: boolean;
 }) {
   const [tab, setTab] = React.useState<"verification" | "data-log">(
     "verification"
   );
+
+  const saRef = React.useRef<HTMLDivElement>(null);
+  const [dockFooter, setDockFooter] = React.useState(false);
+
+  //  ฟังสกรอลล์ของ viewport ด้านในของ ScrollArea
+  React.useEffect(() => {
+    const root = saRef.current;
+    if (!root) return;
+
+    const viewport = root.querySelector(
+      "[data-radix-scroll-area-viewport]"
+    ) as HTMLElement | null;
+    if (!viewport) return;
+
+    const onScroll = () => {
+      // once true, always true (ในรอบการเปิดครั้งนี้)
+      setDockFooter((prev) => prev || viewport.scrollTop > 0);
+    };
+    viewport.addEventListener("scroll", onScroll, { passive: true });
+    return () => viewport.removeEventListener("scroll", onScroll);
+  }, [open, tab]);
+
+  // รีเซ็ตเมื่อเข้า DetailView ใหม่ หรือเปลี่ยนแท็บ
+  React.useEffect(() => {
+    if (open) setDockFooter(false);
+  }, [open, tab]);
+
   if (!open) return null;
 
   const visibleStatus: UiStatus | undefined =
@@ -256,17 +342,14 @@ export default function DetailView({
           <X className="h-6 w-6 text-[#9CA3AF] size-6" />
         </Button>
       </div>
-
       {/* NEW: Status banner ABOVE tabs */}
       <VerificationStatusBanner status={visibleStatus} />
-
       <Separator />
-
       {/* Body  tab */}
       <div className="flex-1 overflow-hidden">
         {/* Verification */}
         {tab === "verification" && (
-          <ScrollArea className="h-full p-4">
+          <ScrollArea ref={saRef} className="h-full p-4">
             {/* Tabs header */}
             <div className="pb-4">
               <Tabs
@@ -495,6 +578,15 @@ export default function DetailView({
                 </SectionFrame>
               </div>
             )}
+            <div
+              className={cn(
+                dockFooter
+                  ? "p-4"
+                  : "sticky bottom-0 -mx-4 px-6 pb-4 pt-2 bg-background"
+              )}
+            >
+              {footer ?? <ActionFooter status={visibleStatus} />}
+            </div>
           </ScrollArea>
         )}
 
@@ -505,9 +597,7 @@ export default function DetailView({
           </ScrollArea>
         )}
       </div>
-
-      <Separator />
-      <div className="p-4">{footer ?? null}</div>
+      {showFooterDivider ? <Separator /> : null}
     </aside>
   );
 }
