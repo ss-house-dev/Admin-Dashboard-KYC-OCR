@@ -119,7 +119,7 @@ export const authOptions: NextAuthOptions = {
 
       // เซ็ตค่าเมื่อ login ครั้งแรก
       if (user) {
-        const u = user as any;
+        const u = user as SignInSuccess;
         t.name = u.name ?? t.name ?? null;
         t.id = u.id;
         t.role = u.role;

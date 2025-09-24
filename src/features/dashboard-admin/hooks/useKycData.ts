@@ -1,5 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { type PaginationState } from "@tanstack/react-table";
+import { isAxiosError } from "axios";
+import type { AxiosError } from "axios";
 import { toStartOfDayZ, toEndOfDayZ } from "../utils/datetime";
 import { Filters, getRowTs, toDisplayRow } from "../utils/kycHelpers";
 import { apiClient } from "../libs/apiClient";
@@ -148,12 +150,18 @@ export function useKycData(defaultValues?: Partial<Filters>) {
         setNextPage(page + 1);
         setRawData(fullResponse);
         setError(null);
-      } catch (e: any) {
-        if (e.response?.status === 401) {
-          await signOut({ callbackUrl: "/signin" });
-          return;
+      } catch (e: unknown) {
+        if (isAxiosError(e)) {
+          const axiosErr = e as AxiosError;
+
+          if (axiosErr.response?.status === 401) {
+            await signOut({ callbackUrl: "/signin" });
+            return;
+          }
+          setError(new Error(axiosErr.message));
+        } else {
+          setError(e instanceof Error ? e : new Error(String(e)));
         }
-        setError(e as Error);
       } finally {
         setIsLoading(false);
         setIsRefetching(false);
