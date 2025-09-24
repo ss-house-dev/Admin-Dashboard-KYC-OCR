@@ -64,9 +64,13 @@ export function FilterView({
   onApply,
   onClear,
 }: Props) {
-  // เก็บเฉพาะ state "UI" ของ popover ภายใน component นี้
   const [openStart, setOpenStart] = React.useState(false);
   const [openEnd, setOpenEnd] = React.useState(false);
+  const today = React.useMemo(() => {
+    const t = new Date();
+    t.setHours(0, 0, 0, 0);
+    return t;
+  }, []);
 
   const fmtDisplay = (d?: Date) => (d ? d.toLocaleDateString() : undefined);
 
@@ -171,10 +175,11 @@ export function FilterView({
                 mode="single"
                 captionLayout="dropdown"
                 selected={start}
+                disabled={[{ after: today }]}
                 onSelect={(d) => {
-                  onChangeStart(d);
-                  // ถ้าเลือก start > end ให้เคลียร์ end (กฎนี้อยู่ฝั่ง container จะดีกว่า แต่แถม safety ให้ด้วย)
-                  if (d && end && d > end) onChangeEnd(undefined);
+                  const picked = d && d > today ? today : d || undefined;
+                  onChangeStart(picked);
+                  if (picked && end && picked > end) onChangeEnd(undefined);
                   setOpenStart(false);
                 }}
               />
@@ -212,10 +217,21 @@ export function FilterView({
                 mode="single"
                 captionLayout="dropdown"
                 selected={end}
+                disabled={
+                  start
+                    ? [{ before: start }, { after: today }]
+                    : [{ after: today }]
+                }
                 onSelect={(d) => {
-                  // ถ้าเลือก end < start ให้ขยับ start ตาม (หรือจะบล็อกก็ได้)
-                  if (d && start && d < start) onChangeStart(d);
-                  onChangeEnd(d);
+                  if (!d) {
+                    onChangeEnd(undefined);
+                    setOpenEnd(false);
+                    return;
+                  }
+                  let picked = d;
+                  if (start && picked < start) picked = start;
+                  if (picked > today) picked = today;
+                  onChangeEnd(picked);
                   setOpenEnd(false);
                 }}
               />

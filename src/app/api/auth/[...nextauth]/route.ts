@@ -13,7 +13,8 @@ type SignInSuccess = {
   role?: string;
   accessToken?: string;
   refreshToken?: string;
-  expiresIn?: number; // seconds
+  expiresIn?: number;
+  refreshExpiresIn?: number;
 };
 
 type SignInResponse = {
@@ -23,7 +24,8 @@ type SignInResponse = {
   role?: string;
   accessToken?: string;
   refreshToken?: string;
-  expiresIn?: number; // seconds
+  expiresIn?: number;
+  refreshExpiresIn?: number;
   message?: string;
 };
 
@@ -32,7 +34,8 @@ type AppJWT = JWT & {
   role?: string;
   accessToken?: string;
   refreshToken?: string;
-  accessTokenExpires?: number; // epoch ms
+  accessTokenExpires?: number;
+  refreshTokenExpires?: number;
 };
 
 type AppSession = Session & {
@@ -122,12 +125,32 @@ export const authOptions: NextAuthOptions = {
         t.role = u.role;
         t.accessToken = u.accessToken;
         t.refreshToken = u.refreshToken;
-        t.accessTokenExpires = Date.now() + (u.expiresIn ?? 900) * 1000; // default ~15m
+        t.accessTokenExpires = Date.now() + (u.expiresIn ?? 900) * 1000;
+
+        // อายุ refresh token
+        const refreshTtlSec =
+          (u.refreshExpiresIn as number | undefined) ??
+          Number(process.env.REFRESH_MAX_AGE_SEC ?? 60 * 60 * 24 * 30);
+        t.refreshTokenExpires = Date.now() + refreshTtlSec * 1000;
+
+        // log หลัง login
+        console.log("[Auth] Login success:", {
+          userId: t.id,
+          role: t.role,
+          accessTokenExpiresAt: new Date(t.accessTokenExpires).toISOString(),
+          refreshTokenExpiresAt: new Date(t.refreshTokenExpires).toISOString(),
+        });
+
         return t;
       }
 
-      // ถ้า token ยังไม่ใกล้หมดอายุ ให้ใช้ต่อ
-      const safeMargin = 30 * 1000; // refresh ล่วงหน้า 30s
+      // ถ้า refresh token หมดอายุแล้ว -> ล้าง session ให้ logout ทันที
+      if (t.refreshTokenExpires && Date.now() >= t.refreshTokenExpires) {
+        return {}; // จะทำให้ getSession()/getToken ว่าง และ middleware จะเด้งออก
+      }
+
+      // access token ยังไม่หมด -> ใช้ต่อ
+      const safeMargin = 30 * 1000;
       if (
         t.accessToken &&
         t.accessTokenExpires &&
@@ -136,7 +159,7 @@ export const authOptions: NextAuthOptions = {
         return t;
       }
 
-      // ใกล้หมด/หมดแล้ว -> refresh ด้วย refreshToken
+      // access token หมด/ใกล้หมด -> ลอง refresh (ถ้ายังมี refresh token และยังไม่หมด)
       try {
         if (t.refreshToken) {
           const resp = await fetch(`${API_BASE_INTERNAL}/auth/refresh`, {
@@ -148,18 +171,26 @@ export const authOptions: NextAuthOptions = {
             body: JSON.stringify({ refreshToken: t.refreshToken }),
           });
           if (!resp.ok) throw new Error("refresh failed");
+
           const rd = (await resp.json()) as {
             accessToken: string;
             refreshToken?: string;
-            expiresIn?: number; // seconds
+            expiresIn?: number;
+            refreshExpiresIn?: number;
           };
+
           t.accessToken = rd.accessToken;
           t.refreshToken = rd.refreshToken ?? t.refreshToken;
           t.accessTokenExpires = Date.now() + (rd.expiresIn ?? 900) * 1000;
+
+          // ถ้ามี refreshExpiresIn ใหม่ ให้ต่ออายุ; ถ้าไม่มีก็ใช้ค่าของเดิม
+          if (typeof rd.refreshExpiresIn === "number") {
+            t.refreshTokenExpires = Date.now() + rd.refreshExpiresIn * 1000;
+          }
           return t;
         }
       } catch {
-        // refresh ไม่สำเร็จ -> เคลียร์ token เพื่อบังคับ login ใหม่
+        // refresh ไม่ได้ -> เคลียร์ token เพื่อให้ระบบบังคับ login ใหม่
         return {};
       }
 
@@ -207,7 +238,6 @@ export const authOptions: NextAuthOptions = {
       }
     },
   },
-
 };
 
 const handler = NextAuth(authOptions);
