@@ -1,15 +1,19 @@
 "use client";
 import { signOut } from "next-auth/react";
+import { isAxiosError } from "axios";
 
 export function ErrorView({ error }: { error: Error }) {
-  if ((error as any)?.response?.status === 401 || error.message.includes("Unauthorized")) {
-    signOut({ callbackUrl: "/signin" });
-    return null; 
+  if (isAxiosError(error)) {
+    if (error.response?.status === 401) {
+      void signOut({ callbackUrl: "/signin" });
+      return null;
+    }
   }
 
-  return (
-    <div className="p-8 text-red-600">
-      Error: {String(error.message)}
-    </div>
-  );
+  if (error.message.includes("Unauthorized")) {
+    void signOut({ callbackUrl: "/signin" });
+    return null;
+  }
+
+  return <div className="p-8 text-red-600">Error: {String(error.message)}</div>;
 }

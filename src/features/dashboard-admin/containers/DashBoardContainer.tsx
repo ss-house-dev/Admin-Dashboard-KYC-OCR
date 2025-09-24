@@ -12,6 +12,7 @@ import DetailView from "../components/DetailView";
 import { LoadingSpinner } from "@/components/LoadingSpinner";
 import { ErrorView } from "@/components/ErrorView";
 import { signOut } from "next-auth/react";
+import { isAxiosError } from "axios";
 
 export default function DashBoardContainer() {
   const {
@@ -33,14 +34,18 @@ export default function DashBoardContainer() {
   console.log("DataTable items:", items);
 
   if (isLoading) return <LoadingSpinner message="Loading…" />;
-  if (error) {
-  if ((error as any)?.response?.status === 401 || error.message.includes("Unauthorized")) {
-    signOut({ callbackUrl: "/signin" });
-    return null; 
-  }
 
-  return <ErrorView error={error} />;
-}
+  if (error) {
+    if (
+      (isAxiosError(error) && error.response?.status === 401) ||
+      error.message.includes("Unauthorized")
+    ) {
+      void signOut({ callbackUrl: "/signin" });
+      return null;
+    }
+
+    return <ErrorView error={error} />;
+  }
 
   return (
     <div className="h-dvh flex flex-col overflow-hidden">
@@ -87,7 +92,6 @@ export default function DashBoardContainer() {
         <div className="min-h-0 overflow-auto p-8 w-full">
           <DataTable
             columns={columns((row) => {
-              // หา object จริงจาก rawData.items โดย match transactionNo หรือ id
               const found = rawData?.data.items.find(
                 (i) =>
                   i.correlationId === row.transactionNo ||
@@ -105,7 +109,7 @@ export default function DashBoardContainer() {
         <DetailView
           open={detailOpen}
           width={360}
-          data={selected} 
+          data={selected}
           onClose={() => setDetailOpen(false)}
         />
       </section>
