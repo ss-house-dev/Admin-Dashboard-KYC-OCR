@@ -11,6 +11,7 @@ import { FilterView } from "../components/FilterView";
 import DetailView from "../components/DetailView";
 import { LoadingSpinner } from "@/components/LoadingSpinner";
 import { ErrorView } from "@/components/ErrorView";
+import { signOut } from "next-auth/react";
 
 export default function DashBoardContainer() {
   const {
@@ -31,8 +32,15 @@ export default function DashBoardContainer() {
 
   console.log("DataTable items:", items);
 
-  if (isLoading) return <LoadingSpinner message="Loading company data…" />;
-  if (error) return <ErrorView error={error} />;
+  if (isLoading) return <LoadingSpinner message="Loading…" />;
+  if (error) {
+  if ((error as any)?.response?.status === 401 || error.message.includes("Unauthorized")) {
+    signOut({ callbackUrl: "/signin" });
+    return null; 
+  }
+
+  return <ErrorView error={error} />;
+}
 
   return (
     <div className="h-dvh flex flex-col overflow-hidden">

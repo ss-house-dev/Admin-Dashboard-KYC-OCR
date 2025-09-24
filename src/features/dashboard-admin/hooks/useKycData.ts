@@ -5,6 +5,7 @@ import { Filters, getRowTs, toDisplayRow } from "../utils/kycHelpers";
 import { apiClient } from "../libs/apiClient";
 import type { CompanyAllData } from "../types/kyc";
 import type { Kycrequest } from "../components/column";
+import { signOut } from "next-auth/react";
 
 export function useKycData(defaultValues?: Partial<Filters>) {
   // Loading/Error
@@ -123,12 +124,9 @@ export function useKycData(defaultValues?: Partial<Filters>) {
           const res = await apiClient.get<CompanyAllData>("/api/company", {
             params,
           });
-          console.log("API raw response:", res.data);
           fullResponse = res.data;
-          // ✅ ต้องเข้าถึง items ที่อยู่ใน data
           const rawItems = res.data?.data?.items ?? [];
           newItems = rawItems.map(toDisplayRow);
-          console.log("Mapped items:", newItems);
         }
 
         const sorted = newItems.sort((a, b) => getRowTs(b) - getRowTs(a));
@@ -148,9 +146,13 @@ export function useKycData(defaultValues?: Partial<Filters>) {
 
         setTotal(sorted.length);
         setNextPage(page + 1);
-        setRawData(fullResponse); 
+        setRawData(fullResponse);
         setError(null);
-      } catch (e) {
+      } catch (e: any) {
+        if (e.response?.status === 401) {
+          await signOut({ callbackUrl: "/signin" });
+          return;
+        }
         setError(e as Error);
       } finally {
         setIsLoading(false);
@@ -179,15 +181,13 @@ export function useKycData(defaultValues?: Partial<Filters>) {
     setAppliedFilters(cleared);
   }, []);
 
-  console.log("DataTable items:", items);
-
   return {
     isLoading,
     isRefetching,
     error,
     items,
     total,
-    rawData, 
+    rawData,
     pagination,
     setPagination,
     fetchData,

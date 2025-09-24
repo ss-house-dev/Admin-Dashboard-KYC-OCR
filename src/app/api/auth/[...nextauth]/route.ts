@@ -25,7 +25,7 @@ type SignInResponse = {
   accessToken?: string;
   refreshToken?: string;
   expiresIn?: number;
-  refreshExpiresIn?: number; 
+  refreshExpiresIn?: number;
   message?: string;
 };
 
@@ -127,11 +127,20 @@ export const authOptions: NextAuthOptions = {
         t.refreshToken = u.refreshToken;
         t.accessTokenExpires = Date.now() + (u.expiresIn ?? 900) * 1000;
 
-        // ⬇️ ตั้งอายุ refresh token
+        // อายุ refresh token
         const refreshTtlSec =
           (u.refreshExpiresIn as number | undefined) ??
-          Number(process.env.REFRESH_MAX_AGE_SEC ?? 60 * 60 * 24 * 14); // default 14 วัน
+          Number(process.env.REFRESH_MAX_AGE_SEC ?? 60 * 60 * 24 * 30);
         t.refreshTokenExpires = Date.now() + refreshTtlSec * 1000;
+
+        // log หลัง login
+        console.log("[Auth] Login success:", {
+          userId: t.id,
+          role: t.role,
+          accessTokenExpiresAt: new Date(t.accessTokenExpires).toISOString(),
+          refreshTokenExpiresAt: new Date(t.refreshTokenExpires).toISOString(),
+        });
+
         return t;
       }
 
@@ -167,7 +176,7 @@ export const authOptions: NextAuthOptions = {
             accessToken: string;
             refreshToken?: string;
             expiresIn?: number;
-            refreshExpiresIn?: number; 
+            refreshExpiresIn?: number;
           };
 
           t.accessToken = rd.accessToken;
@@ -178,7 +187,6 @@ export const authOptions: NextAuthOptions = {
           if (typeof rd.refreshExpiresIn === "number") {
             t.refreshTokenExpires = Date.now() + rd.refreshExpiresIn * 1000;
           }
-
           return t;
         }
       } catch {
@@ -230,7 +238,6 @@ export const authOptions: NextAuthOptions = {
       }
     },
   },
-
 };
 
 const handler = NextAuth(authOptions);

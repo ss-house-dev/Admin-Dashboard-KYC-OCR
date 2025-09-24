@@ -29,21 +29,22 @@ export async function GET(req: NextRequest) {
 
   const sp = new URL(req.url).searchParams;
   const limit = Number(sp.get("limit") ?? "100");
-  const page  = Number(sp.get("page")  ?? "1");
+  const page = Number(sp.get("page") ?? "1");
 
   const statusRaw = sp.get("status");
-  const startRaw  = sp.get("startDate");
-  const endRaw    = sp.get("endDate");
+  const startRaw = sp.get("startDate");
+  const endRaw = sp.get("endDate");
 
-  const status    = statusRaw && statusRaw.toLowerCase() !== "all" ? statusRaw : undefined;
+  const status =
+    statusRaw && statusRaw.toLowerCase() !== "all" ? statusRaw : undefined;
   const startDate = toStartOfDayZ(startRaw ?? undefined);
-  const endDate   = toEndOfDayZ(endRaw ?? undefined); 
+  const endDate = toEndOfDayZ(endRaw ?? undefined);
 
   // ตรวจสอบว่ามีการระบุ field เฉพาะหรือไม่
   let correlationId = sp.get("correlationId") ?? undefined;
-  let email         = sp.get("email") ?? undefined;
+  let email = sp.get("email") ?? undefined;
   let firstNameThai = sp.get("firstNameThai") ?? undefined;
-  let lastNameThai  = sp.get("lastNameThai") ?? undefined;
+  let lastNameThai = sp.get("lastNameThai") ?? undefined;
 
   // ถ้าไม่มีการระบุ field เฉพาะ แต่มี q → ใช้ logic เดิมสำหรับ backward compatibility
   const q = (sp.get("q") ?? "").trim();
@@ -54,7 +55,7 @@ export async function GET(req: NextRequest) {
     (lastNameThai && lastNameThai.length > 0);
 
   if (!hasExplicitField && q) {
-    console.log('Using auto-detection for search query:', q);
+    console.log("Using auto-detection for search query:", q);
     if (isEmail(q)) {
       email = q;
     } else if (looksLikeTransactionId(q)) {
@@ -66,32 +67,53 @@ export async function GET(req: NextRequest) {
         firstNameThai = parts[0];
       } else {
         firstNameThai = parts[0];
-        lastNameThai  = parts.slice(1).join(" ");
+        lastNameThai = parts.slice(1).join(" ");
       }
     }
   } else {
-    console.log('Using explicit search fields:', { correlationId, email, firstNameThai, lastNameThai });
+    console.log("Using explicit search fields:", {
+      correlationId,
+      email,
+      firstNameThai,
+      lastNameThai,
+    });
   }
 
   try {
     const { companyId, data } = await fetchDashboardKyc(token.accessToken, {
-      limit, page, status, startDate, endDate,
-      correlationId, email, firstNameThai, lastNameThai,
+      limit,
+      page,
+      status,
+      startDate,
+      endDate,
+      correlationId,
+      email,
+      firstNameThai,
+      lastNameThai,
     });
-    
-    console.log('API Response:', { 
-      companyId, 
-      totalItems: data?.total, 
+
+    console.log("API Response:", {
+      companyId,
+      totalItems: data?.total,
       returnedItems: data?.items?.length,
-      searchParams: { correlationId, email, firstNameThai, lastNameThai }
+      searchParams: { correlationId, email, firstNameThai, lastNameThai },
     });
-    
+
     return NextResponse.json({ companyId, data });
   } catch (e: unknown) {
-    console.error('API Error:', e);
+    console.error("API Error:", e);
     if (isAxiosError(e)) {
       const status = e.response?.status ?? 502;
       const detail = e.response?.data ?? e.message;
+
+      if (status === 401) {
+        // ถ้าเป็น Unauthorized → ส่ง 401 กลับไปให้ client
+        return NextResponse.json(
+          { error: "Unauthorized", detail },
+          { status: 401 }
+        );
+      }
+
       return NextResponse.json(
         { error: "Upstream request failed", detail },
         { status }
