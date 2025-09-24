@@ -12,8 +12,12 @@ import { cn } from "@/lib/utils";
 import { X } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import DetailDataLog, { type DataLogVM } from "./DetailDataLog";
+import { Dialog, DialogContent, DialogFooter } from "@/components/ui/dialog";
 
 /* ================= Types ================= */
+
+type ConfirmKind = "approve" | "reject" | "override";
+
 export type UiStatus =
   | "Pending"
   | "Approved"
@@ -213,7 +217,17 @@ function VerificationStatusBanner({ status }: { status?: UiStatus }) {
   );
 }
 
-function ActionFooter({ status }: { status?: UiStatus }) {
+function ActionFooter({
+  status,
+  onAskApprove,
+  onAskReject,
+  onAskOverride,
+}: {
+  status?: UiStatus;
+  onAskApprove: () => void;
+  onAskReject: () => void;
+  onAskOverride: () => void;
+}) {
   if (!status) return null;
 
   // กรณี Override แล้ว → โชว์แบนเนอร์เตือนและปิดการกระทำต่อ
@@ -239,10 +253,16 @@ function ActionFooter({ status }: { status?: UiStatus }) {
   if (status === "Pending") {
     return (
       <div className="flex items-center justify-center gap-2">
-        <Button className="flex-1 p-2 rounded-[12px] bg-[#17B26A] text-lg font-normal text-white hover:bg-[#067647]">
+        <Button
+          onClick={onAskApprove}
+          className="flex-1 p-2 rounded-[12px] bg-[#17B26A] text-lg font-normal text-white hover:bg-[#067647]"
+        >
           Approve
         </Button>
-        <Button className="flex-1 p-2 rounded-[12px] bg-[#D92D20] text-lg font-normal text-white hover:bg-[#912018]">
+        <Button
+          onClick={onAskReject}
+          className="flex-1 p-2 rounded-[12px] bg-[#D92D20] text-lg font-normal text-white hover:bg-[#912018]"
+        >
           Reject
         </Button>
       </div>
@@ -252,7 +272,10 @@ function ActionFooter({ status }: { status?: UiStatus }) {
   // Approved → แสดงปุ่มยาว Override & Rejected
   if (status === "Approved") {
     return (
-      <Button className="w-full rounded-[12px] bg-[#D92D20] p-2 text-lg font-normal text-white hover:bg-[#912018]">
+      <Button
+        onClick={onAskReject}
+        className="w-full rounded-[12px] bg-[#D92D20] p-2 text-lg font-normal text-white hover:bg-[#912018]"
+      >
         Override & Rejected
       </Button>
     );
@@ -261,13 +284,90 @@ function ActionFooter({ status }: { status?: UiStatus }) {
   // Rejected → แสดงปุ่มยาว Override & Approve
   if (status === "Rejected") {
     return (
-      <Button className="w-full rounded-[12px] bg-[#17B26A] p-2 text-lg font-normal text-white hover:bg-[#067647]">
+      <Button
+        onClick={onAskOverride}
+        className="w-full rounded-[12px] bg-[#17B26A] p-2 text-lg font-normal text-white hover:bg-[#067647]"
+      >
         Override & Approve
       </Button>
     );
   }
 
   return null;
+}
+
+function ConfirmDialog({
+  open,
+  kind,
+  onCancel,
+  onConfirm,
+}: {
+  open: boolean;
+  kind: ConfirmKind;
+  onCancel: () => void;
+  onConfirm: () => void;
+}) {
+  const config = {
+    approve: {
+      title: "Approve",
+      desc: "Are you sure you want to approve this applicant?",
+      img: "/mark/correct-mark.png",
+      btnClass:
+        "rounded-[12px] bg-[#17B26A] text-white hover:bg-[#067647] px-5 py-2",
+      btnText: "Approve",
+    },
+    reject: {
+      title: "Reject",
+      desc: "Are you sure you want to reject this applicant?",
+      img: "/mark/wrong-mark.png",
+      btnClass:
+        "rounded-[12px] bg-[#D92D20] text-white hover:bg-[#912018] px-5 py-2",
+      btnText: "Reject",
+    },
+    override: {
+      title: "Override",
+      desc: "Are you sure you want to override this applicant?",
+      img: "/mark/exclamation-mark.png",
+      btnClass:
+        "rounded-[12px] bg-[#1D4ED8] text-white hover:bg-[#1E40AF] px-5 py-2",
+      btnText: "Override",
+    },
+  }[kind];
+
+  return (
+    <Dialog open={open} onOpenChange={(v) => !v && onCancel()}>
+      <DialogContent
+        className="max-w-[420px] rounded-2xl p-6"
+        // ทำ overlay ทึบหน่อย
+        overlayClassName="bg-black/60"
+      >
+        <div className="flex flex-col items-center text-center gap-4">
+          <Image
+            src={config.img}
+            alt={config.title}
+            width={120}
+            height={120}
+            priority
+          />
+          <h3 className="text-lg font-semibold">{config.title}</h3>
+          <p className="text-sm text-muted-foreground">{config.desc}</p>
+        </div>
+
+        <DialogFooter className="mt-4 flex gap-3 sm:justify-center">
+          <Button
+            variant="ghost"
+            onClick={onCancel}
+            className="rounded-[12px] border border-[#1D4ED8] text-[#1D4ED8] hover:bg-[#EFF6FF]"
+          >
+            Cancel
+          </Button>
+          <Button onClick={onConfirm} className={config.btnClass}>
+            {config.btnText}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
 }
 
 /* ============ Main ============ */
@@ -296,6 +396,13 @@ export default function DetailView({
 
   const saRef = React.useRef<HTMLDivElement>(null);
   const [dockFooter, setDockFooter] = React.useState(false);
+
+  const [confirm, setConfirm] = React.useState<ConfirmKind | null>(null);
+
+  const handleConfirm = React.useCallback(() => {
+    const kind = confirm;
+    setConfirm(null);
+  }, [confirm]);
 
   //  ฟังสกรอลล์ของ viewport ด้านในของ ScrollArea
   React.useEffect(() => {
@@ -585,7 +692,14 @@ export default function DetailView({
                   : "sticky bottom-0 -mx-4 px-6 pb-4 pt-2 bg-background"
               )}
             >
-              {footer ?? <ActionFooter status={visibleStatus} />}
+              {footer ?? (
+                <ActionFooter
+                  status={visibleStatus}
+                  onAskApprove={() => setConfirm("approve")}
+                  onAskReject={() => setConfirm("reject")}
+                  onAskOverride={() => setConfirm("override")}
+                />
+              )}
             </div>
           </ScrollArea>
         )}
@@ -598,6 +712,16 @@ export default function DetailView({
         )}
       </div>
       {showFooterDivider ? <Separator /> : null}
+
+      {/* Confirm Modals */}
+      {confirm && (
+        <ConfirmDialog
+          open={true}
+          kind={confirm}
+          onCancel={() => setConfirm(null)}
+          onConfirm={handleConfirm}
+        />
+      )}
     </aside>
   );
 }

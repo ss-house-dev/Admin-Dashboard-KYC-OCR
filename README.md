@@ -1,9 +1,10 @@
 ## ลงเพิ่ม
+
 pnpm add -D @tanstack/react-query-devtools
 
 pnpm add react-hook-form
 
-pnpm dlx shadcn@latest init 
+pnpm dlx shadcn@latest init
 
 pnpm add axios
 
@@ -21,8 +22,7 @@ pnpm add -D eslint-plugin-react-hooks eslint-plugin-react @typescript-eslint/esl
 
 pnpm add -D @next/eslint-plugin-next eslint-plugin-react-hooks eslint-plugin-react @typescript-eslint/parser @typescript-eslint/eslint-plugin
 
-
-***component ของ shadCN***
+**_component ของ shadCN_**
 pnpm dlx shadcn@latest add avatar
 
 pnpm dlx shadcn@latest add badge
@@ -57,6 +57,7 @@ pnpm dlx shadcn@latest add card
 
 pnpm dlx shadcn@latest add tabs
 
+pnpm dlx shadcn@latest add dialog
 
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
