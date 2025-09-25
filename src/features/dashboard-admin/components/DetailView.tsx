@@ -273,7 +273,7 @@ function ActionFooter({
   if (status === "Approved") {
     return (
       <Button
-        onClick={onAskReject}
+        onClick={onAskOverride}
         className="w-full rounded-[12px] bg-[#D92D20] p-2 text-lg font-normal text-white hover:bg-[#912018]"
       >
         Override & Rejected
@@ -306,30 +306,49 @@ function ConfirmDialog({
   kind: ConfirmKind;
   onCancel: () => void;
   onConfirm: () => void;
+  desc: React.ReactNode;
 }) {
   const config = {
     approve: {
       title: "Approve",
-      desc: "Are you sure you want to approve this applicant?",
+      desc: (
+        <>
+          Are you sure you want to approve
+          <br />
+          this applicant?
+        </>
+      ),
       img: "/mark/correct-mark.png",
       btnClass:
-        "rounded-[12px] bg-[#17B26A] text-white hover:bg-[#067647] px-5 py-2",
+        "rounded-[12px] bg-[#1C55D9] text-white hover:bg-[#0F2D73] px-5 py-2",
       btnText: "Approve",
     },
     reject: {
       title: "Reject",
-      desc: "Are you sure you want to reject this applicant?",
+      desc: (
+        <>
+          Are you sure you want to reject
+          <br />
+          this applicant?
+        </>
+      ),
       img: "/mark/wrong-mark.png",
       btnClass:
-        "rounded-[12px] bg-[#D92D20] text-white hover:bg-[#912018] px-5 py-2",
+        "rounded-[12px] bg-[#1C55D9] text-white hover:bg-[#0F2D73] px-5 py-2",
       btnText: "Reject",
     },
     override: {
       title: "Override",
-      desc: "Are you sure you want to override this applicant?",
-      img: "/mark/exclamation-mark.png",
+      desc: (
+        <>
+          Are you sure you want to override
+          <br />
+          this applicant?
+        </>
+      ),
+      img: "/mark/override-error.png",
       btnClass:
-        "rounded-[12px] bg-[#1D4ED8] text-white hover:bg-[#1E40AF] px-5 py-2",
+        "rounded-[12px] bg-[#1C55D9] text-white hover:bg-[#0F2D73] px-5 py-2",
       btnText: "Override",
     },
   }[kind];
@@ -337,11 +356,11 @@ function ConfirmDialog({
   return (
     <Dialog open={open} onOpenChange={(v) => !v && onCancel()}>
       <DialogContent
-        className="max-w-[420px] rounded-2xl p-6"
+        className="inline-grid grid-cols-[max-content] auto-rows-auto gap-y-4 p-4"
         // ทำ overlay ทึบหน่อย
         overlayClassName="bg-black/60"
       >
-        <div className="flex flex-col items-center text-center gap-4">
+        <div className="flex flex-col items-center text-center">
           <Image
             src={config.img}
             alt={config.title}
@@ -349,19 +368,25 @@ function ConfirmDialog({
             height={120}
             priority
           />
-          <h3 className="text-lg font-semibold">{config.title}</h3>
-          <p className="text-sm text-muted-foreground">{config.desc}</p>
+          <h3 className="text-xl font-semibold mt-3 mb-1">{config.title}</h3>
+          <p className="mx-12 my-auto text-center text-[#4B5563] text-sm  font-normal">
+            {config.desc}
+          </p>{" "}
         </div>
 
-        <DialogFooter className="mt-4 flex gap-3 sm:justify-center">
+        <DialogFooter className="w-full flex-row items-stretch gap-2 sm:justify-center">
           <Button
             variant="ghost"
             onClick={onCancel}
-            className="rounded-[12px] border border-[#1D4ED8] text-[#1D4ED8] hover:bg-[#EFF6FF]"
+            className="flex-1 h-12 rounded-[12px] border border-[#1C55D9] text-[#1C55D9] hover:bg-[#EFF7FF] hover:text-[#1C55D9]"
           >
             Cancel
           </Button>
-          <Button onClick={onConfirm} className={config.btnClass}>
+
+          <Button
+            onClick={onConfirm}
+            className={cn("flex-1 h-12 rounded-[12px]", config.btnClass)}
+          >
             {config.btnText}
           </Button>
         </DialogFooter>
@@ -720,6 +745,7 @@ export default function DetailView({
           kind={confirm}
           onCancel={() => setConfirm(null)}
           onConfirm={handleConfirm}
+          desc={""}
         />
       )}
     </aside>
