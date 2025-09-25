@@ -3,5 +3,5 @@
 import { redirect } from "next/navigation";
 
 export default function Home() {
-  redirect("/sign-up");
+  redirect("/sign-in");
 }

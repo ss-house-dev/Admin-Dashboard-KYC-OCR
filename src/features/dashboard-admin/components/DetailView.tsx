@@ -7,8 +7,8 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { Kycrequest } from "../components/column";
 import { cn } from "@/lib/utils";
+import type { KycRequestApi } from "../types/kyc";
 import { X } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import DetailDataLog, { type DataLogVM } from "./DetailDataLog";
@@ -54,6 +54,81 @@ export type DetailVM = {
   // Data Log
   dataLog?: DataLogVM | null;
 };
+
+/* ============ Mapper: KycRequestApi → DetailVM ============ */
+
+function mapStatus(s?: string | null): UiStatus {
+  const t = (s ?? "").toLowerCase();
+  if (t.includes("approved override")) return "Approved Override";
+  if (t.includes("rejected override")) return "Rejected Override";
+  if (t.includes("approved")) return "Approved";
+  if (t.includes("rejected")) return "Rejected";
+  return "Pending";
+}
+
+function coalesceName(thFirst?: string | null, thLast?: string | null) {
+  const a = [thFirst ?? "", thLast ?? ""].map((x) => x.trim()).filter(Boolean);
+  return a.length ? a.join(" ") : null;
+}
+
+function computeBankNameMatch(api: KycRequestApi): boolean | null {
+  const th = api.bookbankThaiNameMatchPercent;
+  const en = api.bookbankEnglishNameMatchPercent;
+  if (th == null && en == null) return null;
+  // เกณฑ์เบื้องต้น: ต้องถึงทั้ง TH & EN (แก้ทีหลังได้ถ้ามี boolean ใน API)
+  return (th ?? 0) >= 85 && (en ?? 0) >= 85;
+}
+
+function fromApiToDetailVM(api: KycRequestApi): DetailVM {
+  const fullNameThai =
+    coalesceName(api.idcardEdit?.firstNameThai, api.idcardEdit?.lastNameThai) ??
+    coalesceName(
+      api.idcardOrigin?.firstNameThai,
+      api.idcardOrigin?.lastNameThai
+    );
+
+  const fullNameEng =
+    coalesceName(api.idcardEdit?.firstNameEng, api.idcardEdit?.lastNameEng) ??
+    coalesceName(api.idcardOrigin?.firstNameEng, api.idcardOrigin?.lastNameEng);
+
+  return {
+    transactionNo: api.correlationId ?? undefined,
+    status: mapStatus(api.status),
+
+    // ID Card
+    idcardImageUrl: (api as any).idcardImageUrl ?? null, // ถ้า API มี field อื่นค่อยปรับชื่อ
+    fullNameThai,
+    fullNameEng,
+    idNumber: api.idcardEdit?.idNumber ?? null,
+    laserId: (api as any).idcardEdit?.laserId ?? null,
+    dateOfBirth: api.idcardEdit?.dateOfBirth ?? null,
+    dateOfExpiry: api.idcardEdit?.dateOfExpiry ?? null,
+
+    // Face (ถ้า API ยังไม่มี ให้คง null ไว้)
+    idPhotoUrl: (api as any).idPhotoUrl ?? null,
+    selfieUrl: (api as any).selfieUrl ?? null,
+    faceMatchPercent: (api as any).faceMatchPercent ?? null,
+
+    // Bank
+    bankBookImageUrl: (api as any).bankBookImageUrl ?? null,
+    accountName:
+      api.bookbankEdit?.accountNameThai ??
+      api.bookbankOrigin?.accountNameThai ??
+      api.bookbankEdit?.accountNameEng ??
+      api.bookbankOrigin?.accountNameEng ??
+      null,
+    accountNumber:
+      (api.bookbankOrigin as any)?.accountNo ??
+      (api.bookbankEdit as any)?.accountNo ??
+      null,
+    bank: api.bookbankEdit?.bankName ?? null,
+    branch: api.bookbankEdit?.branchName ?? null,
+    bankNameMatch: computeBankNameMatch(api),
+
+    // Data Log (ต่อจริงค่อย map)
+    dataLog: null,
+  };
+}
 
 /* ============ helpers ============ */
 const STATUS_BADGE_CLASS: Record<UiStatus, string> = {
@@ -123,8 +198,8 @@ function ImageSlot({
     fallback === "face"
       ? "/detail-view/no-people.jpg"
       : "/detail-view/no-pictures.png";
-
-  const finalSrc = src && src.trim() !== "" ? src : fallbackSrc;
+  const finalSrc =
+    src && String(src).trim() !== "" ? (src as string) : fallbackSrc;
 
   return (
     <img
@@ -153,7 +228,7 @@ function SectionFrame({
   );
 }
 
-/* ============ NEW: Status Banner (อยู่เหนือ Tabs) ============ */
+/* ============ Status Banner (อยู่เหนือ Tabs) ============ */
 function statusTheme(status?: UiStatus) {
   switch (status) {
     case "Approved":
@@ -208,14 +283,15 @@ function VerificationStatusBanner({ status }: { status?: UiStatus }) {
             Verification Status
           </p>
           <p className={cn("text-sm text-normal text-black")}>
-            Status :{" "}
-            <span className={cn("  ", T.textLink)}>{status ?? "-"}</span>
+            Status : <span className={cn(T.textLink)}>{status ?? "-"}</span>
           </p>
         </div>
       </div>
     </div>
   );
 }
+
+/* ============ Action Footer & Confirm Dialog ============ */
 
 function ActionFooter({
   status,
@@ -230,7 +306,6 @@ function ActionFooter({
 }) {
   if (!status) return null;
 
-  // กรณี Override แล้ว → โชว์แบนเนอร์เตือนและปิดการกระทำต่อ
   if (status === "Rejected Override" || status === "Approved Override") {
     return (
       <div className="flex flex-1 justify-between items-center p-4 gap-2 rounded-[8px] text-black bg-[var(--Primary-Alert,_#FFB201)]">
@@ -249,7 +324,6 @@ function ActionFooter({
     );
   }
 
-  // Pending → แสดงปุ่ม Approve/Reject คู่กัน
   if (status === "Pending") {
     return (
       <div className="flex items-center justify-center gap-2">
@@ -269,7 +343,6 @@ function ActionFooter({
     );
   }
 
-  // Approved → แสดงปุ่มยาว Override & Rejected
   if (status === "Approved") {
     return (
       <Button
@@ -281,7 +354,6 @@ function ActionFooter({
     );
   }
 
-  // Rejected → แสดงปุ่มยาว Override & Approve
   if (status === "Rejected") {
     return (
       <Button
@@ -306,7 +378,6 @@ function ConfirmDialog({
   kind: ConfirmKind;
   onCancel: () => void;
   onConfirm: () => void;
-  desc: React.ReactNode;
 }) {
   const config = {
     approve: {
@@ -357,8 +428,8 @@ function ConfirmDialog({
     <Dialog open={open} onOpenChange={(v) => !v && onCancel()}>
       <DialogContent
         className="inline-grid grid-cols-[max-content] auto-rows-auto gap-y-4 p-4"
-        // ทำ overlay ทึบหน่อย
         overlayClassName="bg-black/60"
+        showCloseButton={false}
       >
         <div className="flex flex-col items-center text-center">
           <Image
@@ -369,9 +440,9 @@ function ConfirmDialog({
             priority
           />
           <h3 className="text-xl font-semibold mt-3 mb-1">{config.title}</h3>
-          <p className="mx-12 my-auto text-center text-[#4B5563] text-sm  font-normal">
+          <p className="mt-1 mx-auto px-12 inline-block w-fit text-center text-[#4B5563] text-sm leading-5 font-normal">
             {config.desc}
-          </p>{" "}
+          </p>
         </div>
 
         <DialogFooter className="w-full flex-row items-stretch gap-2 sm:justify-center">
@@ -382,7 +453,6 @@ function ConfirmDialog({
           >
             Cancel
           </Button>
-
           <Button
             onClick={onConfirm}
             className={cn("flex-1 h-12 rounded-[12px]", config.btnClass)}
@@ -409,7 +479,7 @@ export default function DetailView({
   open: boolean;
   onClose: () => void;
   width?: number;
-  data: Kycrequest | null;
+  data: KycRequestApi | null;
   detail?: DetailVM | null;
   className?: string;
   footer?: React.ReactNode;
@@ -418,45 +488,84 @@ export default function DetailView({
   const [tab, setTab] = React.useState<"verification" | "data-log">(
     "verification"
   );
-
   const saRef = React.useRef<HTMLDivElement>(null);
   const [dockFooter, setDockFooter] = React.useState(false);
-
   const [confirm, setConfirm] = React.useState<ConfirmKind | null>(null);
 
   const handleConfirm = React.useCallback(() => {
     const kind = confirm;
     setConfirm(null);
+    // TODO: call API ตาม kind
   }, [confirm]);
 
-  //  ฟังสกรอลล์ของ viewport ด้านในของ ScrollArea
+  // ✅ Map ข้อมูลให้พร้อมใช้ (ทำทุก render โดยไม่ขึ้นกับ open)
+  const resolvedDetail: DetailVM | null = React.useMemo(
+    () => detail ?? (data ? fromApiToDetailVM(data) : null),
+    [detail, data]
+  );
+  const visibleStatus: UiStatus | undefined =
+    resolvedDetail?.status ??
+    (data ? mapStatus((data as any).status) : undefined);
+
+  // ✅ ฟังสกรอลล์ของ viewport (เรียกทุก render, guard ในฟังก์ชัน)
   React.useEffect(() => {
     const root = saRef.current;
     if (!root) return;
-
     const viewport = root.querySelector(
       "[data-radix-scroll-area-viewport]"
     ) as HTMLElement | null;
     if (!viewport) return;
 
-    const onScroll = () => {
-      // once true, always true (ในรอบการเปิดครั้งนี้)
+    const onScroll = () =>
       setDockFooter((prev) => prev || viewport.scrollTop > 0);
-    };
     viewport.addEventListener("scroll", onScroll, { passive: true });
     return () => viewport.removeEventListener("scroll", onScroll);
   }, [open, tab]);
 
-  // รีเซ็ตเมื่อเข้า DetailView ใหม่ หรือเปลี่ยนแท็บ
+  // ✅ รีเซ็ต dockFooter เมื่อเข้าใหม่/เปลี่ยนแท็บ
   React.useEffect(() => {
     if (open) setDockFooter(false);
   }, [open, tab]);
 
-  if (!open) return null;
+  // ✅ DEBUG LOG: เรียกทุก render แต่ guard ด้วย open
+  React.useEffect(() => {
+    if (!open) return;
 
-  const visibleStatus: UiStatus | undefined =
-    (detail?.status as UiStatus | undefined) ??
-    (data?.status as UiStatus | undefined);
+    const tx =
+      resolvedDetail?.transactionNo ?? (data as any)?.correlationId ?? "-";
+
+    console.groupCollapsed(
+      `🔎 DetailView opened: tx=${tx} status=${visibleStatus ?? "-"}`
+    );
+    console.log("props.detail (UI VM):", detail);
+    console.log("props.data (API):", data);
+    console.log("resolvedDetail (UI VM):", resolvedDetail);
+    console.table({
+      transactionNo: resolvedDetail?.transactionNo ?? null,
+      status: resolvedDetail?.status ?? null,
+      fullNameThai: resolvedDetail?.fullNameThai ?? null,
+      fullNameEng: resolvedDetail?.fullNameEng ?? null,
+      idNumber: resolvedDetail?.idNumber ?? null,
+      bank: resolvedDetail?.bank ?? null,
+      branch: resolvedDetail?.branch ?? null,
+      accountName: resolvedDetail?.accountName ?? null,
+      accountNumber: resolvedDetail?.accountNumber ?? null,
+      faceMatchPercent: resolvedDetail?.faceMatchPercent ?? null,
+      bankNameMatch: resolvedDetail?.bankNameMatch ?? null,
+    });
+    console.groupEnd();
+  }, [open, resolvedDetail, detail, data, visibleStatus]);
+
+  // ✅ DEBUG LOG ตอนเปิด ConfirmDialog (hook เรียกทุกครั้ง, guard ภายใน)
+  React.useEffect(() => {
+    if (!confirm) return;
+    const tx =
+      resolvedDetail?.transactionNo ?? (data as any)?.correlationId ?? "-";
+    console.log(`🧾 ConfirmDialog: kind=${confirm} tx=${tx}`);
+  }, [confirm, resolvedDetail, data]);
+
+  // ⛔️ อย่า return ก่อน hooks — ย้ายมาไว้หลังจากประกาศ hooks ทั้งหมด
+  if (!open) return null;
 
   return (
     <aside
@@ -474,12 +583,13 @@ export default function DetailView({
           <X className="h-6 w-6 text-[#9CA3AF] size-6" />
         </Button>
       </div>
-      {/* NEW: Status banner ABOVE tabs */}
+
+      {/* Status banner ABOVE tabs */}
       <VerificationStatusBanner status={visibleStatus} />
       <Separator />
-      {/* Body  tab */}
+
+      {/* Body & Tabs */}
       <div className="flex-1 overflow-hidden">
-        {/* Verification */}
         {tab === "verification" && (
           <ScrollArea ref={saRef} className="h-full p-4">
             {/* Tabs header */}
@@ -494,7 +604,6 @@ export default function DetailView({
                     "flex w-full max-w-[352px] p-1 justify-center rounded-[50px] bg-[#ECECF0]/80",
                     "gap-2"
                   );
-
                   const triggerCls = cn(
                     "flex-none font-normal text-sm",
                     "data-[state=active]:bg-white",
@@ -503,7 +612,6 @@ export default function DetailView({
                     "data-[state=active]:shadow-none",
                     "data-[state=active]:outline-none data-[state=active]:ring-0"
                   );
-
                   return (
                     <TabsList className={tabsListCls}>
                       <TabsTrigger value="verification" className={triggerCls}>
@@ -517,7 +625,6 @@ export default function DetailView({
                         />
                         <span className="pl-6 pr-6">Verification</span>
                       </TabsTrigger>
-
                       <TabsTrigger value="data-log" className={triggerCls}>
                         <Image
                           src="/mark/hard-drive.svg"
@@ -535,7 +642,7 @@ export default function DetailView({
               </Tabs>
             </div>
 
-            {!data && !detail ? (
+            {!resolvedDetail ? (
               <p className="text-sm text-muted-foreground">No selection</p>
             ) : (
               <div className="space-y-4 text-sm">
@@ -548,7 +655,7 @@ export default function DetailView({
                     <div className="py-6 px-4 space-y-4">
                       <div className="col-span-2">
                         <ImageSlot
-                          src={detail?.idcardImageUrl}
+                          src={resolvedDetail.idcardImageUrl}
                           alt="ID Card"
                           height="h-32"
                           fallback="doc"
@@ -556,21 +663,24 @@ export default function DetailView({
                       </div>
                       <Field
                         label="Full Name (TH)"
-                        value={detail?.fullNameThai}
+                        value={resolvedDetail.fullNameThai}
                       />
                       <Field
                         label="Full Name (ENG)"
-                        value={detail?.fullNameEng}
+                        value={resolvedDetail.fullNameEng}
                       />
-                      <Field label="ID Number" value={detail?.idNumber} />
-                      <Field label="Laser ID" value={detail?.laserId} />
+                      <Field
+                        label="ID Number"
+                        value={resolvedDetail.idNumber}
+                      />
+                      <Field label="Laser ID" value={resolvedDetail.laserId} />
                       <Field
                         label="Date of Birth"
-                        value={fmtDate(detail?.dateOfBirth)}
+                        value={fmtDate(resolvedDetail.dateOfBirth)}
                       />
                       <Field
                         label="Date of Expiry"
-                        value={fmtDate(detail?.dateOfExpiry)}
+                        value={fmtDate(resolvedDetail.dateOfExpiry)}
                       />
                     </div>
                   </div>
@@ -589,10 +699,9 @@ export default function DetailView({
                           <span className="text-base font-normal">
                             ID Photo
                           </span>
-                          {/* กรอบขาวบาง ๆ รอบรูป */}
                           <div className="rounded-xl overflow-hidden bg-white p-1 shadow-sm">
                             <ImageSlot
-                              src={detail?.idPhotoUrl}
+                              src={resolvedDetail.idPhotoUrl}
                               alt="ID Photo"
                               height="h-24"
                               fallback="face"
@@ -604,7 +713,7 @@ export default function DetailView({
                           <span className="text-base font-normal ">Selfie</span>
                           <div className="rounded-xl overflow-hidden bg-white p-1 shadow-sm">
                             <ImageSlot
-                              src={detail?.selfieUrl}
+                              src={resolvedDetail.selfieUrl}
                               alt="Selfie"
                               height="h-24"
                               fallback="face"
@@ -616,18 +725,18 @@ export default function DetailView({
                       {/* ขวา: % + ข้อความ + Badge ระดับ */}
                       <div className="ml-auto flex flex-col items-center">
                         {(() => {
-                          const pct = detail?.faceMatchPercent ?? null;
+                          const pct = resolvedDetail.faceMatchPercent ?? null;
                           const pctText =
                             pct != null ? `${Math.round(pct)}%` : "-";
                           const grade = gradeConfidence(pct);
 
                           const pctColor =
                             grade === "High"
-                              ? "text-[#10B981]" // เขียว
+                              ? "text-[#10B981]"
                               : grade === "Moderate"
-                              ? "text-[#D97706]" // เหลือง
+                              ? "text-[#D97706]"
                               : grade === "Low"
-                              ? "text-[#EF4444]" // แดง
+                              ? "text-[#EF4444]"
                               : "text-foreground";
 
                           const badgeCls =
@@ -677,32 +786,41 @@ export default function DetailView({
                     <div className="py-6 px-4 space-y-4">
                       <div className="col-span-2">
                         <ImageSlot
-                          src={detail?.bankBookImageUrl}
+                          src={resolvedDetail.bankBookImageUrl}
                           alt="Bank book"
                           height="h-28"
                           fallback="doc"
                         />
                       </div>
-                      <Field label="Account Name" value={detail?.accountName} />
+                      <Field
+                        label="Account Name"
+                        value={resolvedDetail.accountName}
+                      />
                       <Field
                         label="Account Number"
-                        value={detail?.accountNumber}
+                        value={resolvedDetail.accountNumber}
                       />
-                      <Field label="Bank" value={detail?.bank} />
-                      <Field label="Branch" value={detail?.branch} />
+                      <Field label="Bank" value={resolvedDetail.bank} />
+                      <Field label="Branch" value={resolvedDetail.branch} />
                       <Field
                         label="Name Matching"
                         value={
-                          <Badge
-                            className={cn(
-                              "border-none px-2 py-0.5 text-sm font-normal",
-                              detail?.bankNameMatch
-                                ? "bg-green-100 text-green-700"
-                                : "bg-red-100 text-red-700"
-                            )}
-                          >
-                            {detail?.bankNameMatch ? "Match" : "Not match"}
-                          </Badge>
+                          resolvedDetail.bankNameMatch == null ? (
+                            "-"
+                          ) : (
+                            <Badge
+                              className={cn(
+                                "border-none px-2 py-0.5 text-sm font-normal",
+                                resolvedDetail.bankNameMatch
+                                  ? "bg-green-100 text-green-700"
+                                  : "bg-red-100 text-red-700"
+                              )}
+                            >
+                              {resolvedDetail.bankNameMatch
+                                ? "Match"
+                                : "Not match"}
+                            </Badge>
+                          )
                         }
                       />
                     </div>
@@ -710,6 +828,7 @@ export default function DetailView({
                 </SectionFrame>
               </div>
             )}
+
             <div
               className={cn(
                 dockFooter
@@ -732,10 +851,11 @@ export default function DetailView({
         {/* Data Log */}
         {tab === "data-log" && (
           <ScrollArea className="h-full p-4">
-            <DetailDataLog dataLog={detail?.dataLog} />
+            <DetailDataLog dataLog={resolvedDetail?.dataLog} />
           </ScrollArea>
         )}
       </div>
+
       {showFooterDivider ? <Separator /> : null}
 
       {/* Confirm Modals */}
@@ -745,7 +865,6 @@ export default function DetailView({
           kind={confirm}
           onCancel={() => setConfirm(null)}
           onConfirm={handleConfirm}
-          desc={""}
         />
       )}
     </aside>

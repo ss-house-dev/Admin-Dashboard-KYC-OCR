@@ -27,20 +27,20 @@ type StatusType =
 
 const StatusBadge = ({ status }: { status: StatusType }) => {
   const statusColors: Record<StatusType, string> = {
-    Approved: "bg-green-100 text-green-700 hover:bg-green-100",
-    Pending: "bg-yellow-100 text-yellow-700 hover:bg-yellow-100",
-    Rejected: "bg-red-100 text-red-700 hover:bg-red-100",
-    "Approved Override": "bg-green-100 text-green-700 hover:bg-green-100",
-    "Rejected Override": "bg-red-100 text-red-700 hover:bg-red-100",
+    Approved: "bg-green-100 text-green-700 border-[#6DFB9E] hover:bg-green-100",
+    Pending:
+      "bg-yellow-100 text-yellow-700 border-[#FEED3D] hover:bg-yellow-100",
+    Rejected: "bg-red-100 text-red-700 border-[#FF9191] hover:bg-red-100",
+    "Approved Override":
+      "bg-green-100 text-green-700 border-[#6DFB9E] hover:bg-green-100",
+    "Rejected Override":
+      "bg-red-100 text-red-700 border-[#FF9191] hover:bg-red-100",
   };
 
   const statusClass = statusColors[status] || "bg-gray-100 text-gray-700";
 
   return (
-    <Badge
-      variant="outline"
-      className={`border-none font-normal ${statusClass}`}
-    >
+    <Badge variant="outline" className={`font-normal ${statusClass}`}>
       {status}
     </Badge>
   );
@@ -95,7 +95,15 @@ export function columns(
       id: "detail",
       header: "Detail",
       cell: ({ row }) => (
-        <Button className="text-[#414651]" size="sm" variant="outline" onClick={() => onView(row.original)}>
+        <Button
+          className="text-[#414651]"
+          size="sm"
+          variant="outline"
+          onClick={(e) => {
+            e.stopPropagation();
+            onView(row.original);
+          }}
+        >
           View Detail
         </Button>
       ),
