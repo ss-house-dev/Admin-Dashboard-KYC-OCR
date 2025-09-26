@@ -44,9 +44,8 @@ type AppSession = Session & {
     name?: string | null;
     role?: string;
   };
-  // ตั้งใจ "ไม่" ปล่อย token ออก client เพื่อความปลอดภัย
-  // accessToken?: string;
-  // refreshToken?: string;
+  accessToken?: string;
+  refreshToken?: string;
 };
 
 /* ===================== Utils ===================== */
@@ -58,9 +57,35 @@ function getMessage(v: unknown): string | undefined {
   return undefined;
 }
 
+/** พยายามดึง role จาก /auth/me ถ้ามี accessToken (บาง backend ให้มาด้วย) */
+async function fetchRoleFromMe(
+  accessToken: string
+): Promise<string | undefined> {
+  try {
+    const res = await fetch(`${API_BASE_INTERNAL}/auth/me`, {
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        accept: "application/json",
+        "Cache-Control": "no-cache",
+      },
+      cache: "no-store",
+    });
+    if (!res.ok) return undefined;
+    const data = (await res.json()) as unknown;
+    if (isObject(data)) {
+      // เผื่อ backend ใส่ role ไว้บน root หรือซ้อนใน user
+      if (typeof data.role === "string") return data.role;
+      const u = data.user;
+      if (isObject(u) && typeof u.role === "string") return u.role;
+    }
+    return undefined;
+  } catch {
+    return undefined;
+  }
+}
+
 /* =================== NextAuth ==================== */
 export const authOptions: NextAuthOptions = {
-  // ให้ตรงกับ middleware ที่ redirect -> /auth/signin
   pages: { signIn: "/sign-in" },
   session: { strategy: "jwt" },
 
@@ -101,14 +126,34 @@ export const authOptions: NextAuthOptions = {
         }
 
         const d = data as SignInResponse;
-        return {
+
+        // ไม่เดา "user" เอง — ถ้าไม่มี role จะพยายามดึงจาก /auth/me
+        let role: string | undefined = d.user?.role ?? d.role ?? undefined;
+
+        const accessToken = d.accessToken;
+        if (!role && typeof accessToken === "string" && accessToken) {
+          role = await fetchRoleFromMe(accessToken);
+        }
+
+        const out: SignInSuccess = {
           id: d.user?._id ?? d._id ?? username,
           name: d.user?.username ?? d.username ?? username,
-          role: d.user?.role ?? d.role ?? "user",
-          accessToken: d.accessToken,
+          role, // อาจเป็น "admin" หรือ undefined แต่ไม่ default เป็น "user"
+          accessToken,
           refreshToken: d.refreshToken,
           expiresIn: d.expiresIn,
+          refreshExpiresIn: d.refreshExpiresIn,
         };
+
+        console.log("[Auth] authorize() result:", {
+          userId: out.id,
+          name: out.name,
+          role: out.role ?? "(none)",
+          hasAccessToken: Boolean(out.accessToken),
+          hasRefreshToken: Boolean(out.refreshToken),
+        });
+
+        return out;
       },
     }),
   ],
@@ -117,26 +162,25 @@ export const authOptions: NextAuthOptions = {
     async jwt({ token, user }) {
       const t = token as AppJWT;
 
-      // เซ็ตค่าเมื่อ login ครั้งแรก
+      // login ครั้งแรก
       if (user) {
         const u = user as SignInSuccess;
         t.name = u.name ?? t.name ?? null;
         t.id = u.id;
-        t.role = u.role;
+        // เก็บ role (ถ้า backend ให้มา) — ถ้าไม่มี ให้คงค่าเดิมไว้
+        t.role = u.role ?? t.role;
         t.accessToken = u.accessToken;
         t.refreshToken = u.refreshToken;
         t.accessTokenExpires = Date.now() + (u.expiresIn ?? 900) * 1000;
 
-        // อายุ refresh token
         const refreshTtlSec =
           (u.refreshExpiresIn as number | undefined) ??
           Number(process.env.REFRESH_MAX_AGE_SEC ?? 60 * 60 * 24 * 30);
         t.refreshTokenExpires = Date.now() + refreshTtlSec * 1000;
 
-        // log หลัง login
         console.log("[Auth] Login success:", {
           userId: t.id,
-          role: t.role,
+          role: t.role ?? "(none)",
           accessTokenExpiresAt: new Date(t.accessTokenExpires).toISOString(),
           refreshTokenExpiresAt: new Date(t.refreshTokenExpires).toISOString(),
         });
@@ -144,12 +188,13 @@ export const authOptions: NextAuthOptions = {
         return t;
       }
 
-      // ถ้า refresh token หมดอายุแล้ว -> ล้าง session ให้ logout ทันที
+      // refresh token หมด -> เคลียร์ session
       if (t.refreshTokenExpires && Date.now() >= t.refreshTokenExpires) {
-        return {}; // จะทำให้ getSession()/getToken ว่าง และ middleware จะเด้งออก
+        console.warn("[Auth] Refresh token expired -> clearing session");
+        return {};
       }
 
-      // access token ยังไม่หมด -> ใช้ต่อ
+      // access token ยังใช้ได้
       const safeMargin = 30 * 1000;
       if (
         t.accessToken &&
@@ -159,7 +204,7 @@ export const authOptions: NextAuthOptions = {
         return t;
       }
 
-      // access token หมด/ใกล้หมด -> ลอง refresh (ถ้ายังมี refresh token และยังไม่หมด)
+      // ลอง refresh access token
       try {
         if (t.refreshToken) {
           const resp = await fetch(`${API_BASE_INTERNAL}/auth/refresh`, {
@@ -177,20 +222,35 @@ export const authOptions: NextAuthOptions = {
             refreshToken?: string;
             expiresIn?: number;
             refreshExpiresIn?: number;
+            role?: string; // เผื่อ backend ใส่ role มา
           };
 
           t.accessToken = rd.accessToken;
           t.refreshToken = rd.refreshToken ?? t.refreshToken;
           t.accessTokenExpires = Date.now() + (rd.expiresIn ?? 900) * 1000;
 
-          // ถ้ามี refreshExpiresIn ใหม่ ให้ต่ออายุ; ถ้าไม่มีก็ใช้ค่าของเดิม
           if (typeof rd.refreshExpiresIn === "number") {
             t.refreshTokenExpires = Date.now() + rd.refreshExpiresIn * 1000;
           }
+
+          // ถ้า refresh response ให้ role มาด้วย ก็อัปเดต
+          if (typeof rd.role === "string") {
+            t.role = rd.role;
+          }
+
+          console.log("[Auth] Token refreshed:", {
+            userId: t.id,
+            role: t.role ?? "(none)",
+            accessTokenExpiresAt: new Date(t.accessTokenExpires).toISOString(),
+            refreshTokenExpiresAt: new Date(
+              t.refreshTokenExpires ?? 0
+            ).toISOString(),
+          });
+
           return t;
         }
-      } catch {
-        // refresh ไม่ได้ -> เคลียร์ token เพื่อให้ระบบบังคับ login ใหม่
+      } catch (e) {
+        console.error("[Auth] Refresh token failed:", e);
         return {};
       }
 
@@ -201,6 +261,11 @@ export const authOptions: NextAuthOptions = {
       const t = token as AppJWT;
       const s = session as AppSession;
 
+      console.log("[Auth] session() callback:", {
+        token,
+        session,
+      });
+
       s.user = {
         ...s.user,
         id: t.id,
@@ -208,18 +273,22 @@ export const authOptions: NextAuthOptions = {
         role: t.role,
       };
 
-      // ถ้าจำเป็นต้องใช้ token ฝั่ง client ค่อยเปิดสองบรรทัดนี้
-      // s.accessToken = t.accessToken;
-      // s.refreshToken = t.refreshToken;
+      s.accessToken = t.accessToken;
+      s.refreshToken = t.refreshToken;
+
+      console.groupCollapsed("[Auth] Session built");
+      console.table({
+        userId: s.user?.id,
+        role: s.user?.role ?? "(none)",
+        hasAccessToken: Boolean(s.accessToken),
+        hasRefreshToken: Boolean(s.refreshToken),
+      });
+      console.groupEnd();
 
       return s;
     },
   },
 
-  /**
-   * signOut จากที่ไหนก็ตาม -> ยิงไป backend เพื่อ revoke/logout
-   * หมายเหตุ: ไม่ block การ logout แม้ backend พัง (ทำ best-effort)
-   */
   events: {
     async signOut({ token }) {
       try {

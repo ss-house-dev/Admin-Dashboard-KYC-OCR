@@ -108,3 +108,88 @@ export async function fetchDashboardKyc(
   });
   return { companyId, data };
 }
+
+
+
+// ====== UPDATE STATUS (PATCH) - ใช้กับ Proxy API ======
+
+export type ApiStatus =
+  | "approved"
+  | "rejected"
+  | "approved override"
+  | "rejected override";
+
+export type UpdateKycStatusPayload = {
+  id: string;        // = KycRequestApi.id
+  status: ApiStatus; // ค่าต้องตรงตาม backend
+};
+
+function maskToken(token: string | null | undefined): string {
+  if (!token) return "none";
+  if (token.length <= 12) return token.replace(/.(?=.{4})/g, "*");
+  return `${token.slice(0, 6)}…${token.slice(-4)}`;
+}
+
+/** PATCH: /kyc/requests/:id  { _id, status } */
+export async function updateKycRequestStatus(
+  accessToken: string,
+  payload: UpdateKycStatusPayload
+): Promise<unknown> {
+  const { id, status } = payload;
+  const url = `${API_KYC_REQUEST}/kyc/requests/${encodeURIComponent(id)}`;
+  const body = { _id: id, status };
+
+  console.groupCollapsed("[server] updateKycRequestStatus");
+  console.table({
+    url,
+    id,
+    status,
+    API_KYC_REQUEST,
+    token: maskToken(accessToken),
+  });
+  const t0 = Date.now();
+
+  try {
+    const res = await axios.patch(url, body, {
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        Accept: "application/json",
+        "Content-Type": "application/json",
+        "Cache-Control": "no-cache",
+      },
+      // validateStatus: () => true, // (ถ้าต้องการให้ไม่ throw เมื่อ !2xx)
+    });
+
+    const dt = Date.now() - t0;
+    // ตัด response เป็นสตริงสั้น ๆ กันล็อกยาวไป
+    const preview =
+      typeof res.data === "string"
+        ? res.data.slice(0, 500)
+        : JSON.stringify(res.data).slice(0, 500);
+
+    console.table({
+      status: res.status,
+      duration_ms: dt,
+      ok: res.status >= 200 && res.status < 300,
+      resp_preview: preview,
+    });
+    console.groupEnd();
+    return res.data as unknown;
+  } catch (err) {
+    const dt = Date.now() - t0;
+    console.error("[server] updateKycRequestStatus ERROR in", dt, "ms");
+    if (axios.isAxiosError(err)) {
+      console.error("status:", err.response?.status);
+      console.error(
+        "data:",
+        typeof err.response?.data === "string"
+          ? err.response?.data
+          : JSON.stringify(err.response?.data)
+      );
+    } else {
+      console.error("error:", err);
+    }
+    console.groupEnd();
+    throw err;
+  }
+}
