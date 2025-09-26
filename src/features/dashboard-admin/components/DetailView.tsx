@@ -652,98 +652,97 @@ export default function DetailView({
     }
   }
 
-const handleConfirm = React.useCallback(async () => {
-  if (!confirm) return;
+  const handleConfirm = React.useCallback(async () => {
+    if (!confirm) return;
 
-  const kind = confirm;
-  const baseStatus =
-    resolvedDetail?.status ?? (data ? mapStatus(data.status) : undefined);
+    const kind = confirm;
+    const baseStatus =
+      resolvedDetail?.status ?? (data ? mapStatus(data.status) : undefined);
 
-  const requestId = resolvedDetail?.requestId ?? data?.id ?? "";
-  const companyId = data?.companyId ?? "";
-  const tx = resolvedDetail?.transactionNo ?? data?.correlationId ?? "-";
+    // ใช้ _id สำหรับ body และ companyId สำหรับ path
+    const requestId = resolvedDetail?.requestId ?? data?.id ?? "";
+    const companyId = data?.companyId ?? "";
+    const tx = resolvedDetail?.transactionNo ?? data?.correlationId ?? "-";
 
-  const apiStatus = actionToApiStatus(kind, baseStatus);
-  const optimistic = computeNewStatusForAction(kind, baseStatus);
+    const apiStatus = actionToApiStatus(kind, baseStatus);
+    const optimistic = computeNewStatusForAction(kind, baseStatus);
 
-  const token = session?.accessToken ?? null;
-  const upstreamUrl = `${API_KYC_REQUEST}/kyc/requests/${encodeURIComponent(companyId)}`;
+    // proxy ฝั่ง server จะเป็นคนแนบ Bearer token ให้เอง
+    const proxyUrl = `/api/admin/kyc/${encodeURIComponent(companyId)}/status`;
 
-  console.groupCollapsed("[DetailView] ▶ PATCH (optimistic)");
-  console.table({
-    companyId,
-    body__id: requestId,
-    apiStatus,
-    uiBaseStatus: baseStatus ?? null,
-    uiOptimistic: optimistic,
-    tx,
-    hasToken: Boolean(token),
-    upstreamUrl,
-  });
-  console.groupEnd();
-
-  if (!token || !companyId || !requestId) {
-    alert("ข้อมูลไม่ครบ (token/companyId/_id)"); // guard ขั้นสุดท้าย
-    return;
-  }
-
-  // ① ปิด dialog และอัปเดต UI ทันที (optimistic)
-  setConfirm(null);
-  setLocalStatus(optimistic);
-
-  try {
-    const res = await fetch(upstreamUrl, {
-      method: "PATCH",
-      headers: {
-        Accept: "application/json",
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify({ _id: requestId, status: apiStatus }),
+    console.groupCollapsed("[DetailView] ▶ PATCH via proxy (optimistic)");
+    console.table({
+      proxyUrl,
+      companyId,
+      body__id: requestId,
+      apiStatus,
+      uiBaseStatus: baseStatus ?? null,
+      uiOptimistic: optimistic,
+      tx,
     });
-
-    const ctype = res.headers.get("content-type") ?? "";
-    const bodyPreview = ctype.includes("application/json")
-      ? await res.clone().json()
-      : await res.clone().text();
-
-    console.groupCollapsed("[DetailView] ◀ PATCH result");
-    console.table({ ok: res.ok, status: res.status, upstreamUrl });
-    console.log("response:", bodyPreview);
     console.groupEnd();
 
-    if (!res.ok) {
-      // ② ถ้าพัง → rollback สถานะเก่า
-      setLocalStatus(baseStatus);
-      throw new Error(
-        `PATCH failed ${res.status} ${
-          typeof bodyPreview === "string"
-            ? bodyPreview
-            : JSON.stringify(bodyPreview)
-        }`
-      );
+    if (!companyId || !requestId) {
+      alert("ข้อมูลไม่ครบ (companyId/_id)"); // guard ขั้นสุดท้าย
+      return;
     }
 
-    // ③ แจ้งผู้ฟังภายนอก (ถ้าหน้ารายการอยาก sync เอง) — ไม่บังคับแก้ไฟล์อื่น
-    emitKycStatusUpdated({
-      companyId,
-      requestId,
-      correlationId: String(tx),
-      newStatus: optimistic,
-      apiStatus,
-    });
+    // ① ปิด dialog และอัปเดต UI ทันที (optimistic)
+    setConfirm(null);
+    setLocalStatus(optimistic);
 
-    // ④ แจ้ง parent ผ่าน prop ถ้ามี (จะไม่พังถ้าไม่ได้ส่งมา)
     try {
-      onStatusChanged?.(optimistic);
-    } catch {
-      /* noop */
+      const res = await fetch(proxyUrl, {
+        method: "PATCH",
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ _id: requestId, status: apiStatus }),
+      });
+
+      const ctype = res.headers.get("content-type") ?? "";
+      const bodyPreview = ctype.includes("application/json")
+        ? await res.clone().json()
+        : await res.clone().text();
+
+      console.groupCollapsed("[DetailView] ◀ PATCH result (proxy)");
+      console.table({ ok: res.ok, status: res.status, proxyUrl });
+      console.log("response:", bodyPreview);
+      console.groupEnd();
+
+      if (!res.ok) {
+        // ② ถ้าพัง → rollback สถานะเก่า
+        setLocalStatus(baseStatus);
+        throw new Error(
+          `PATCH failed ${res.status} ${
+            typeof bodyPreview === "string"
+              ? bodyPreview
+              : JSON.stringify(bodyPreview)
+          }`
+        );
+      }
+
+      // ③ แจ้งผู้ฟังภายนอก (DataTable จะอัปเดตเอง)
+      emitKycStatusUpdated({
+        companyId,
+        requestId,
+        correlationId: String(tx),
+        newStatus: optimistic,
+        apiStatus,
+      });
+
+      // ④ แจ้ง parent ผ่าน prop ถ้ามี
+      try {
+        onStatusChanged?.(optimistic);
+      } catch {
+        /* noop */
+      }
+    } catch (err) {
+      console.error("[DetailView] ❌ PATCH failed; rollback", err);
+      alert("Update status failed. โปรดลองใหม่");
     }
-  } catch (err) {
-    console.error("[DetailView] ❌ PATCH failed; rollback", err);
-    alert("Update status failed. โปรดลองใหม่");
-  }
-}, [confirm, resolvedDetail, data, session, onStatusChanged]);
+  }, [confirm, resolvedDetail, data, onStatusChanged]);
 
   // visibleStatus prefers localStatus (optimistic)
   const visibleStatus: UiStatus | undefined =
