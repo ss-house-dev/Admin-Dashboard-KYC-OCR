@@ -5,7 +5,7 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 
-/** โครงข้อมูลสำหรับ Data Log (ยืดหยุ่น/optional) */
+/** ViewModel สำหรับ Data Log (ยืดหยุ่น/optional) */
 export type DataLogVM = {
   idCard?: {
     thaiOriginalName?: string | null;
@@ -30,6 +30,37 @@ export default function DetailDataLog({
 }: {
   dataLog?: DataLogVM | null;
 }) {
+  // DEBUG: log ให้ครบเวลาเปิดแท็บ Data Log
+  React.useEffect(() => {
+    console.groupCollapsed("📘 DetailDataLog mounted");
+    console.log("props.dataLog:", dataLog);
+    if (dataLog?.idCard) {
+      console.groupCollapsed("🪪 ID Card");
+      console.table({
+        thaiOriginalName: dataLog.idCard.thaiOriginalName ?? null,
+        thaiEditedName: dataLog.idCard.thaiEditedName ?? null,
+        thaiSimilarityPercent: dataLog.idCard.thaiSimilarityPercent ?? null,
+        engOriginalName: dataLog.idCard.engOriginalName ?? null,
+        engEditedName: dataLog.idCard.engEditedName ?? null,
+        engSimilarityPercent: dataLog.idCard.engSimilarityPercent ?? null,
+      });
+      console.groupEnd();
+    }
+    if (dataLog?.bankBook) {
+      console.groupCollapsed("🏦 Bank Book");
+      console.table({
+        thaiOriginalName: dataLog.bankBook.thaiOriginalName ?? null,
+        thaiEditedName: dataLog.bankBook.thaiEditedName ?? null,
+        thaiSimilarityPercent: dataLog.bankBook.thaiSimilarityPercent ?? null,
+        engOriginalName: dataLog.bankBook.engOriginalName ?? null,
+        engEditedName: dataLog.bankBook.engEditedName ?? null,
+        engSimilarityPercent: dataLog.bankBook.engSimilarityPercent ?? null,
+      });
+      console.groupEnd();
+    }
+    console.groupEnd();
+  }, [dataLog]);
+
   if (!dataLog) {
     return (
       <Card className="p-6 text-sm text-muted-foreground">No Data Log</Card>
@@ -38,65 +69,61 @@ export default function DetailDataLog({
 
   return (
     <div className="space-y-4">
-      <DataLogSection
-        heading="ID Card Data"
-        thaiOriginal={dataLog.idCard?.thaiOriginalName}
-        thaiEdited={dataLog.idCard?.thaiEditedName}
-        thaiPercent={dataLog.idCard?.thaiSimilarityPercent}
-        engOriginal={dataLog.idCard?.engOriginalName}
-        engEdited={dataLog.idCard?.engEditedName}
-        engPercent={dataLog.idCard?.engSimilarityPercent}
-      />
+      {/* ID Card Data */}
+      <SectionFrame title="ID Card Data" className="border-0 p-0 shadow-none">
+        <div className="rounded-[12px] bg-[#F9FAFC] px-4 py-6 space-y-4">
+          <NameCompareBlock
+            title="THAI"
+            original={dataLog.idCard?.thaiOriginalName}
+            edited={dataLog.idCard?.thaiEditedName}
+            percent={dataLog.idCard?.thaiSimilarityPercent}
+          />
+          <NameCompareBlock
+            title="ENG"
+            original={dataLog.idCard?.engOriginalName}
+            edited={dataLog.idCard?.engEditedName}
+            percent={dataLog.idCard?.engSimilarityPercent}
+          />
+        </div>
+      </SectionFrame>
 
-      <DataLogSection
-        heading="Book Bank Data"
-        thaiOriginal={dataLog.bankBook?.thaiOriginalName}
-        thaiEdited={dataLog.bankBook?.thaiEditedName}
-        thaiPercent={dataLog.bankBook?.thaiSimilarityPercent}
-        engOriginal={dataLog.bankBook?.engOriginalName}
-        engEdited={dataLog.bankBook?.engEditedName}
-        engPercent={dataLog.bankBook?.engSimilarityPercent}
-      />
+      {/* Book Bank Data */}
+      <SectionFrame title="Book Bank Data" className="border-0 p-0 shadow-none">
+        <div className="rounded-[12px] bg-[#F9FAFC] px-4 py-6 space-y-4">
+          <NameCompareBlock
+            title="THAI"
+            original={dataLog.bankBook?.thaiOriginalName}
+            edited={dataLog.bankBook?.thaiEditedName}
+            percent={dataLog.bankBook?.thaiSimilarityPercent}
+          />
+          <NameCompareBlock
+            title="ENG"
+            original={dataLog.bankBook?.engOriginalName}
+            edited={dataLog.bankBook?.engEditedName}
+            percent={dataLog.bankBook?.engSimilarityPercent}
+          />
+        </div>
+      </SectionFrame>
     </div>
   );
 }
 
 /* ============ Internal sub-components ============ */
 
-function DataLogSection({
-  heading,
-  thaiOriginal,
-  thaiEdited,
-  thaiPercent,
-  engOriginal,
-  engEdited,
-  engPercent,
+function SectionFrame({
+  title,
+  children,
+  className,
 }: {
-  heading: string;
-  thaiOriginal?: string | null;
-  thaiEdited?: string | null;
-  thaiPercent?: number | null;
-  engOriginal?: string | null;
-  engEdited?: string | null;
-  engPercent?: number | null;
+  title: string;
+  children: React.ReactNode;
+  className?: string;
 }) {
   return (
-    <SectionFrame title={heading}>
-      <div className="space-y-3">
-        <NameCompareBlock
-          title="THAI"
-          original={thaiOriginal}
-          edited={thaiEdited}
-          percent={thaiPercent}
-        />
-        <NameCompareBlock
-          title="ENG"
-          original={engOriginal}
-          edited={engEdited}
-          percent={engPercent}
-        />
-      </div>
-    </SectionFrame>
+    <Card className={cn("p-4", className)}>
+      <h3 className="mb-3 font-medium text-lg">{title}</h3>
+      {children}
+    </Card>
   );
 }
 
@@ -111,49 +138,65 @@ function NameCompareBlock({
   edited?: string | null;
   percent?: number | null;
 }) {
-  const pctText = percent == null ? "-" : `${Math.round(percent)}%`;
+  const badge = percentBadge(percent);
+
   return (
-    <div className="rounded-lg border bg-muted/30 p-3">
-      <p className="mb-2 font-medium">{title}</p>
-      <div className="grid grid-cols-2 gap-3">
-        <Field label="Original name" value={original ?? "-"} />
-        <div className="flex items-start justify-between">
-          <Field label="Edited name" value={edited ?? "-"} />
-          <Badge className="ml-2 bg-emerald-100 text-emerald-700 border-none self-start">
-            {pctText}
-          </Badge>
-        </div>
+    <div className="rounded-lg bg-white/60 p-3">
+      <p className="mb-3 font-medium">{title}</p>
+
+      {/* แถวข้อมูล: label ซ้าย / value ขวา (truncate) */}
+      <Row label="Original name" value={original} />
+      <Row label="Edited name" value={edited} />
+
+      {/* แถวคะแนนความเหมือน */}
+      <div className="mt-2 flex items-center justify-between">
+        <p className="text-xs text-muted-foreground">Similarity Score</p>
+        <Badge
+          className={cn(
+            "border-none px-2 py-0.5 text-sm font-normal rounded-full",
+            badge.className
+          )}
+        >
+          {badge.text}
+        </Badge>
       </div>
     </div>
   );
 }
 
-function SectionFrame({
-  title,
-  children,
-}: {
-  title: string;
-  children: React.ReactNode;
-}) {
+function Row({ label, value }: { label: string; value?: string | null }) {
   return (
-    <Card className="p-4">
-      <h3 className="mb-3 font-medium">{title}</h3>
-      {children}
-    </Card>
+    <div className="flex items-center justify-between">
+      <p className="text-xs text-muted-foreground">{label}</p>
+      <p className="ml-4 max-w-[60%] truncate text-sm">
+        {value && value.trim() !== "" ? value : "-"}
+      </p>
+    </div>
   );
 }
 
-function Field({
-  label,
-  value,
-}: {
-  label: string;
-  value?: React.ReactNode | null;
-}) {
-  return (
-    <div className="space-y-1">
-      <p className="text-xs text-muted-foreground">{label}</p>
-      <p className="text-sm">{value ?? "-"}</p>
-    </div>
-  );
+/** กำหนดสี/ข้อความของ Badge ตามช่วงเปอร์เซ็นต์ */
+function percentBadge(
+  pct?: number | null
+): { text: string; className: string } {
+  if (pct == null || Number.isNaN(pct)) {
+    return { text: "-", className: "bg-muted text-muted-foreground" };
+  }
+  const p = Math.max(0, Math.min(100, Math.round(pct)));
+  if (p >= 85) {
+    return {
+      text: `${p}%`,
+      className: "bg-[#E8F7EE] text-[#16A34A]",
+    };
+  }
+  if (p >= 65) {
+    return {
+      text: `${p}%`,
+      className: "bg-[#FFF7E6] text-[#B45309]",
+    };
+  }
+  return {
+    text: `${p}%`,
+    className: "bg-[#FEE2E2] text-[#B91C1C]",
+  };
 }
