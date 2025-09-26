@@ -656,18 +656,38 @@ export default function DetailView({
     if (!confirm) return;
 
     const kind = confirm;
-    const baseStatus =
-      resolvedDetail?.status ?? (data ? mapStatus(data.status) : undefined);
+
+    // ✅ ใช้สถานะที่มองเห็นจริงบน UI (รวม optimistic ผ่าน localStatus แล้ว)
+    const currentStatus =
+      localStatus ??
+      resolvedDetail?.status ??
+      (data ? mapStatus(data.status) : undefined);
 
     // ใช้ _id สำหรับ body และ companyId สำหรับ path
     const requestId = resolvedDetail?.requestId ?? data?.id ?? "";
     const companyId = data?.companyId ?? "";
     const tx = resolvedDetail?.transactionNo ?? data?.correlationId ?? "-";
 
-    const apiStatus = actionToApiStatus(kind, baseStatus);
-    const optimistic = computeNewStatusForAction(kind, baseStatus);
+    // แปลง action → สถานะ backend + คำนวณสถานะใหม่บน UI
+    const apiStatus = actionToApiStatus(kind, currentStatus);
+    const optimistic = computeNewStatusForAction(kind, currentStatus);
 
-    // proxy ฝั่ง server จะเป็นคนแนบ Bearer token ให้เอง
+    // กัน override ตอนยังไม่ Approved/Rejected
+    if (
+      kind === "override" &&
+      !(
+        String(currentStatus ?? "")
+          .toLowerCase()
+          .includes("approved") ||
+        String(currentStatus ?? "")
+          .toLowerCase()
+          .includes("rejected")
+      )
+    ) {
+      alert("Override ได้เฉพาะเมื่อสถานะเป็น Approved หรือ Rejected เท่านั้น");
+      return;
+    }
+
     const proxyUrl = `/api/admin/kyc/${encodeURIComponent(companyId)}/status`;
 
     console.groupCollapsed("[DetailView] ▶ PATCH via proxy (optimistic)");
@@ -676,18 +696,17 @@ export default function DetailView({
       companyId,
       body__id: requestId,
       apiStatus,
-      uiBaseStatus: baseStatus ?? null,
+      uiCurrent: currentStatus ?? null,
       uiOptimistic: optimistic,
       tx,
     });
     console.groupEnd();
 
     if (!companyId || !requestId) {
-      alert("ข้อมูลไม่ครบ (companyId/_id)"); // guard ขั้นสุดท้าย
+      alert("ข้อมูลไม่ครบ (companyId/_id)");
       return;
     }
 
-    // ① ปิด dialog และอัปเดต UI ทันที (optimistic)
     setConfirm(null);
     setLocalStatus(optimistic);
 
@@ -712,8 +731,7 @@ export default function DetailView({
       console.groupEnd();
 
       if (!res.ok) {
-        // ② ถ้าพัง → rollback สถานะเก่า
-        setLocalStatus(baseStatus);
+        setLocalStatus(currentStatus);
         throw new Error(
           `PATCH failed ${res.status} ${
             typeof bodyPreview === "string"
@@ -740,9 +758,11 @@ export default function DetailView({
       }
     } catch (err) {
       console.error("[DetailView] ❌ PATCH failed; rollback", err);
+      setLocalStatus(currentStatus);
       alert("Update status failed. โปรดลองใหม่");
     }
-  }, [confirm, resolvedDetail, data, onStatusChanged]);
+    // ⬇️ อัปเดต dependencies ให้ถูกต้อง (ไม่ต้องใส่ visibleStatus แล้ว)
+  }, [confirm, localStatus, resolvedDetail, data, onStatusChanged]);
 
   // visibleStatus prefers localStatus (optimistic)
   const visibleStatus: UiStatus | undefined =
