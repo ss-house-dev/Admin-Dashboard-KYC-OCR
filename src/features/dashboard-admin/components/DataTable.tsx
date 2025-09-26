@@ -1,5 +1,6 @@
 "use client";
 
+import * as React from "react";
 import {
   ColumnDef,
   flexRender,
@@ -27,6 +28,24 @@ import {
 import { cn } from "@/lib/utils";
 import { DataTablePagination } from "./DataTable-pagination";
 
+/** payload ที่ DetailView ยิงออกมาเมื่ออัปเดตสถานะสำเร็จ */
+type KycStatusUpdatedDetail = {
+  companyId: string;
+  requestId: string;
+  correlationId: string; // == transactionNo ในตาราง
+  newStatus:
+    | "Approved"
+    | "Pending"
+    | "Rejected"
+    | "Approved Override"
+    | "Rejected Override";
+  apiStatus:
+    | "approved"
+    | "rejected"
+    | "approved override"
+    | "rejected override";
+};
+
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];
   data: TData[];
@@ -44,8 +63,56 @@ export function DataTable<TData, TValue>({
   onPaginationChange,
   onView,
 }: DataTableProps<TData, TValue>) {
+  /** เก็บ state ภายในเพื่อให้ patch แถวได้แบบไม่รีหน้า */
+  const [rows, setRows] = React.useState<TData[]>(data);
+
+  /** sync เมื่อ data จากภายนอกเปลี่ยน (เช่น re-fetch) */
+  React.useEffect(() => {
+    setRows(data);
+  }, [data]);
+
+  /** ฟังอีเวนต์จาก DetailView → แก้สถานะของแถวที่ transactionNo ตรงกับ correlationId */
+  React.useEffect(() => {
+    const handler = (ev: Event) => {
+      const e = ev as CustomEvent<KycStatusUpdatedDetail>;
+      const d = e.detail;
+      if (!d) return;
+
+      setRows((prev) =>
+        prev.map((r) => {
+          const ro = r as unknown as Record<string, unknown>;
+          const txn = ro["transactionNo"];
+          if (typeof txn === "string" && txn === d.correlationId) {
+            const next: Record<string, unknown> = {
+              ...ro,
+              status: d.newStatus,
+            };
+
+            // Debug ให้เห็นว่าปรับสำเร็จ
+            console.groupCollapsed("[DataTable] kyc:status-updated applied");
+            console.table({
+              correlationId: d.correlationId,
+              newStatus: d.newStatus,
+            });
+            console.groupEnd();
+
+            return next as unknown as TData;
+          }
+          return r;
+        })
+      );
+    };
+
+    window.addEventListener("kyc:status-updated", handler as EventListener);
+    return () =>
+      window.removeEventListener(
+        "kyc:status-updated",
+        handler as EventListener
+      );
+  }, []);
+
   const table = useReactTable({
-    data,
+    data: rows, // ⬅ ใช้ state ภายในแทน props.data
     columns,
     getCoreRowModel: getCoreRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
@@ -59,7 +126,7 @@ export function DataTable<TData, TValue>({
         className={cn(
           "rounded-md border overflow-x-auto",
           className,
-          table.getRowModel().rows?.length === 0 && "h-full" 
+          table.getRowModel().rows?.length === 0 && "h-full"
         )}
       >
         <div className="flex justify-between space-x-6 lg:space-x-8 px-6 p-5">
@@ -109,7 +176,7 @@ export function DataTable<TData, TValue>({
                 <TableRow
                   key={row.id}
                   data-state={row.getIsSelected() && "selected"}
-                  onClick={() => onView?.(row.original)} 
+                  onClick={() => onView?.(row.original)}
                 >
                   {row.getVisibleCells().map((cell) => (
                     <TableCell key={cell.id}>
