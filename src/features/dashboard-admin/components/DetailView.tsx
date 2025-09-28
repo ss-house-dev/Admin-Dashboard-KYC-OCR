@@ -164,6 +164,41 @@ function fromApiToDetailVM(api: KycRequestApi): DetailVM {
     coalesceName(api.idcardEdit?.firstNameEng, api.idcardEdit?.lastNameEng) ??
     coalesceName(api.idcardOrigin?.firstNameEng, api.idcardOrigin?.lastNameEng);
 
+  // ===== DataLog mapping =====
+  const idThaiOriginal =
+    coalesceName(
+      api.idcardOrigin?.firstNameThai,
+      api.idcardOrigin?.lastNameThai
+    ) ?? null;
+  const idThaiEdited =
+    coalesceName(api.idcardEdit?.firstNameThai, api.idcardEdit?.lastNameThai) ??
+    null;
+  const idThaiPct: number | null = api.idcardThaiNameMatchPercent ?? null;
+  const idThaiEditedForUI = idThaiPct === 100 ? null : idThaiEdited;
+
+  const idEngOriginal =
+    coalesceName(
+      api.idcardOrigin?.firstNameEng,
+      api.idcardOrigin?.lastNameEng
+    ) ?? null;
+  const idEngEdited =
+    coalesceName(api.idcardEdit?.firstNameEng, api.idcardEdit?.lastNameEng) ??
+    null;
+  const idEngPct: number | null = api.idcardEnglishNameMatchPercent ?? null;
+  const idEngEditedForUI = idEngPct === 100 ? null : idEngEdited;
+
+  const bbThaiOriginal: string | null =
+    api.bookbankOrigin?.accountNameThai ?? null;
+  const bbThaiEdited: string | null = api.bookbankEdit?.accountNameThai ?? null;
+  const bbThaiPct: number | null = api.bookbankThaiNameMatchPercent ?? null;
+  const bbThaiEditedForUI = bbThaiPct === 100 ? null : bbThaiEdited;
+
+  const bbEngOriginal: string | null =
+    api.bookbankOrigin?.accountNameEng ?? null;
+  const bbEngEdited: string | null = api.bookbankEdit?.accountNameEng ?? null;
+  const bbEngPct: number | null = api.bookbankEnglishNameMatchPercent ?? null;
+  const bbEngEditedForUI = bbEngPct === 100 ? null : bbEngEdited;
+
   return {
     requestId: api.id,
     transactionNo: api.correlationId ?? undefined,
@@ -197,7 +232,24 @@ function fromApiToDetailVM(api: KycRequestApi): DetailVM {
     branch: api.bookbankEdit?.branchName ?? null,
     bankNameMatch: computeBankNameMatch(api),
 
-    dataLog: null,
+    dataLog: {
+      idCard: {
+        thaiOriginalName: idThaiOriginal,
+        thaiEditedName: idThaiEditedForUI,
+        thaiSimilarityPercent: idThaiPct,
+        engOriginalName: idEngOriginal,
+        engEditedName: idEngEditedForUI,
+        engSimilarityPercent: idEngPct,
+      },
+      bankBook: {
+        thaiOriginalName: bbThaiOriginal,
+        thaiEditedName: bbThaiEditedForUI,
+        thaiSimilarityPercent: bbThaiPct,
+        engOriginalName: bbEngOriginal,
+        engEditedName: bbEngEditedForUI,
+        engSimilarityPercent: bbEngPct,
+      },
+    },
   };
 }
 
@@ -223,15 +275,15 @@ function StatusBadge({ status }: { status?: UiStatus }) {
 }
 
 function fmtDate(iso?: string | null) {
-  if (!iso) return "-";
+  if (!iso) return "N/A";
   const d = new Date(iso);
-  return isNaN(d.getTime()) ? "-" : d.toLocaleDateString();
+  return isNaN(d.getTime()) ? "N/A" : d.toLocaleDateString();
 }
 
 function gradeConfidence(
   pct: number | null | undefined
-): "High" | "Moderate" | "Low" | "-" {
-  if (pct == null) return "-";
+): "High" | "Moderate" | "Low" | "N/A" {
+  if (pct == null) return "N/A";
   if (pct >= 85) return "High";
   if (pct >= 65) return "Moderate";
   return "Low";
@@ -248,7 +300,7 @@ function Field({
     <div className="flex items-center justify-between w-full ">
       <span className="text-xs font-normal">{label}</span>
       <span className="text-sm font-normal ml-4 text-right truncate max-w-[60%]">
-        {value ?? "-"}
+        {value ?? "N/A"}
       </span>
     </div>
   );
@@ -370,7 +422,7 @@ function VerificationStatusBanner({ status }: { status?: UiStatus }) {
             Verification Status
           </p>
           <p className={cn("text-sm text-normal text-black")}>
-            Status : <span className={cn(T.textLink)}>{status ?? "-"}</span>
+            Status : <span className={cn(T.textLink)}>{status ?? "N/A"}</span>
           </p>
         </div>
       </div>
@@ -666,7 +718,7 @@ export default function DetailView({
     // ใช้ _id สำหรับ body และ companyId สำหรับ path
     const requestId = resolvedDetail?.requestId ?? data?.id ?? "";
     const companyId = data?.companyId ?? "";
-    const tx = resolvedDetail?.transactionNo ?? data?.correlationId ?? "-";
+    const tx = resolvedDetail?.transactionNo ?? data?.correlationId ?? "N/A";
 
     // แปลง action → สถานะ backend + คำนวณสถานะใหม่บน UI
     const apiStatus = actionToApiStatus(kind, currentStatus);
@@ -794,8 +846,8 @@ export default function DetailView({
   React.useEffect(() => {
     if (!open) return;
 
-    const tx = resolvedDetail?.transactionNo ?? data?.correlationId ?? "-";
-    const vis = visibleStatus ?? "-";
+    const tx = resolvedDetail?.transactionNo ?? data?.correlationId ?? "N/A";
+    const vis = visibleStatus ?? "N/A";
 
     // ==== กลุ่มสรุปสถานะโดยรวม ====
     console.groupCollapsed(`🔎 DetailView opened: tx=${tx} status=${vis}`);
@@ -893,7 +945,7 @@ export default function DetailView({
 
   React.useEffect(() => {
     if (!confirm) return;
-    const tx = resolvedDetail?.transactionNo ?? data?.correlationId ?? "-";
+    const tx = resolvedDetail?.transactionNo ?? data?.correlationId ?? "N/A";
     console.log(`🧾 ConfirmDialog: kind=${confirm} tx=${tx}`);
   }, [confirm, resolvedDetail, data]);
 
@@ -1075,7 +1127,7 @@ export default function DetailView({
                         {(() => {
                           const pct = resolvedDetail.faceMatchPercent ?? null;
                           const pctText =
-                            pct != null ? `${Math.round(pct)}%` : "-";
+                            pct != null ? `${Math.round(pct)}%` : "N/A";
                           const grade = gradeConfidence(pct);
 
                           const pctColor =
@@ -1154,7 +1206,7 @@ export default function DetailView({
                         label="Name Matching"
                         value={
                           resolvedDetail.bankNameMatch == null ? (
-                            "-"
+                            "N/A"
                           ) : (
                             <Badge
                               className={cn(
