@@ -71,7 +71,7 @@ export default function DetailDataLog({
     <div className="space-y-4">
       {/* ID Card Data */}
       <SectionFrame title="ID Card Data" className="border-0 p-0 shadow-none">
-        <div className="rounded-[12px] bg-[#F9FAFC] px-4 py-6 space-y-4">
+        <div className="rounded-xs py-6 px-4 bg-[#F9FAFC] space-y-4">
           <NameCompareBlock
             title="THAI"
             original={dataLog.idCard?.thaiOriginalName}
@@ -89,7 +89,7 @@ export default function DetailDataLog({
 
       {/* Book Bank Data */}
       <SectionFrame title="Book Bank Data" className="border-0 p-0 shadow-none">
-        <div className="rounded-[12px] bg-[#F9FAFC] px-4 py-6 space-y-4">
+        <div className="rounded-xs px-4 py-6 bg-[#F9FAFC] space-y-4">
           <NameCompareBlock
             title="THAI"
             original={dataLog.bankBook?.thaiOriginalName}
@@ -121,7 +121,7 @@ function SectionFrame({
 }) {
   return (
     <Card className={cn("p-4", className)}>
-      <h3 className="mb-3 font-medium text-lg">{title}</h3>
+      <h3 className="font-medium text-xl">{title}</h3>
       {children}
     </Card>
   );
@@ -138,47 +138,50 @@ function NameCompareBlock({
   edited?: string | null;
   percent?: number | null;
 }) {
-  const badge = percentBadge(percent);
+  const badge = percent != null ? percentBadge(percent) : null;
+  const displayEdited = percent === 100 ? null : edited;
 
   return (
-    <div className="rounded-lg bg-white/60 p-3">
-      <p className="mb-3 font-medium">{title}</p>
-
-      {/* แถวข้อมูล: label ซ้าย / value ขวา (truncate) */}
+    <div className="space-y-4">
+      <p className="text-sm font-medium">{title}</p>
       <Row label="Original name" value={original} />
-      <Row label="Edited name" value={edited} />
-
-      {/* แถวคะแนนความเหมือน */}
-      <div className="mt-2 flex items-center justify-between">
-        <p className="text-xs text-muted-foreground">Similarity Score</p>
-        <Badge
-          className={cn(
-            "border-none px-2 py-0.5 text-sm font-normal rounded-full",
-            badge.className
-          )}
-        >
-          {badge.text}
-        </Badge>
+      <Row label="Edited name" value={displayEdited} />
+      <div className=" flex items-center justify-between">
+        <p className="text-sm text-[#646464]">Similarity Score</p>
+        {badge ? (
+          <Badge
+            className={cn(
+              "border-none px-2 py-0.5 text-sm font-normal rounded-full",
+              badge.className
+            )}
+          >
+            {badge.text}
+          </Badge>
+        ) : (
+          <span className="text-sm text-[#212121]">N/A</span>
+        )}
       </div>
     </div>
   );
 }
 
 function Row({ label, value }: { label: string; value?: string | null }) {
+  const display = value && value.trim() !== "" ? value : "N/A";
   return (
     <div className="flex items-center justify-between">
-      <p className="text-xs text-muted-foreground">{label}</p>
-      <p className="ml-4 max-w-[60%] truncate text-sm">
-        {value && value.trim() !== "" ? value : "-"}
+      <p className="text-sm text-[#646464]">{label}</p>
+      <p className="ml-4 font-normal text-sm text-[#212121]">
+        {display}
       </p>
     </div>
   );
 }
 
 /** กำหนดสี/ข้อความของ Badge ตามช่วงเปอร์เซ็นต์ */
-function percentBadge(
-  pct?: number | null
-): { text: string; className: string } {
+function percentBadge(pct?: number | null): {
+  text: string;
+  className: string;
+} {
   if (pct == null || Number.isNaN(pct)) {
     return { text: "-", className: "bg-muted text-muted-foreground" };
   }
