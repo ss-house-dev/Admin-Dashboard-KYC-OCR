@@ -59,6 +59,9 @@ pnpm dlx shadcn@latest add tabs
 
 pnpm dlx shadcn@latest add dialog
 
+pnpm dlx shadcn@latest add dropdown-menu
+
+
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
 ## Getting Started
