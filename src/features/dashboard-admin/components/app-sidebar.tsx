@@ -24,6 +24,7 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarTrigger,
+  useSidebar,
 } from "@/components/ui/sidebar";
 import Image from "next/image";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -71,6 +72,17 @@ export function AppSidebar() {
     const origin = typeof window !== "undefined" ? window.location.origin : "";
     await signOut({ callbackUrl: `${origin}/sign-in`, redirect: true });
   }
+
+  const { open, setOpen } = useSidebar();
+
+  // เมื่อมีการเปิด DetailView และ sidebar เปิดอยู่ → ปิด sidebar
+  React.useEffect(() => {
+    const handle = () => {
+      if (open) setOpen(false);
+    };
+    window.addEventListener("dashboard:detail-opened", handle);
+    return () => window.removeEventListener("dashboard:detail-opened", handle);
+  }, [open, setOpen]);
 
   return (
     <Sidebar className="h-full border-r bg-white p-0" collapsible="icon">

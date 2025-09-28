@@ -51,7 +51,9 @@ export default function DetailView({
   showFooterDivider?: boolean;
   onStatusChanged?: (newStatus: UiStatus) => void;
 }) {
-  const [tab, setTab] = React.useState<"verification" | "data-log">("verification");
+  const [tab, setTab] = React.useState<"verification" | "data-log">(
+    "verification"
+  );
   const saRef = React.useRef<HTMLDivElement>(null);
 
   // ---------- START: optimistic status (DO NOT MODIFY OTHER LINES) ----------
@@ -63,8 +65,6 @@ export default function DetailView({
     session,
     authStatus,
     resolvedDetail,
-    localStatus,
-    setLocalStatus,
     visibleStatus,
     confirm,
     setConfirm,
@@ -105,17 +105,33 @@ export default function DetailView({
     console.log("has accessToken:", Boolean((session as any)?.accessToken));
     const token: string | undefined = (session as any)?.accessToken;
     if (token) {
-      console.log("accessToken preview:", token.slice(0, 6) + "…" + token.slice(-4));
+      console.log(
+        "accessToken preview:",
+        token.slice(0, 6) + "…" + token.slice(-4)
+      );
     }
     console.log("session.user:", (session as any)?.user);
     console.groupEnd();
   }, [session, authStatus]);
 
+  React.useEffect(() => {
+    if (open) {
+      try {
+        window.dispatchEvent(new CustomEvent("dashboard:detail-opened"));
+      } catch {
+        /* noop */
+      }
+    }
+  }, [open]);
+
   if (!open) return null;
 
   return (
     <aside
-      className={cn(" bg-background h-full overflow-hidden flex flex-col", className)}
+      className={cn(
+        " bg-background h-full overflow-hidden flex flex-col",
+        className
+      )}
       style={{ width }}
       aria-hidden={!open}
     >
@@ -205,12 +221,27 @@ export default function DetailView({
                           fallback="doc"
                         />
                       </div>
-                      <Field label="Full Name (TH)" value={resolvedDetail.fullNameThai} />
-                      <Field label="Full Name (ENG)" value={resolvedDetail.fullNameEng} />
-                      <Field label="ID Number" value={resolvedDetail.idNumber} />
+                      <Field
+                        label="Full Name (TH)"
+                        value={resolvedDetail.fullNameThai}
+                      />
+                      <Field
+                        label="Full Name (ENG)"
+                        value={resolvedDetail.fullNameEng}
+                      />
+                      <Field
+                        label="ID Number"
+                        value={resolvedDetail.idNumber}
+                      />
                       <Field label="Laser ID" value={resolvedDetail.laserId} />
-                      <Field label="Date of Birth" value={fmtDate(resolvedDetail.dateOfBirth)} />
-                      <Field label="Date of Expiry" value={fmtDate(resolvedDetail.dateOfExpiry)} />
+                      <Field
+                        label="Date of Birth"
+                        value={fmtDate(resolvedDetail.dateOfBirth)}
+                      />
+                      <Field
+                        label="Date of Expiry"
+                        value={fmtDate(resolvedDetail.dateOfExpiry)}
+                      />
                     </div>
                   </div>
                 </SectionFrame>
@@ -225,7 +256,9 @@ export default function DetailView({
                       {/* ซ้าย: ID Photo / Selfie */}
                       <div className="flex gap-2">
                         <div className="flex flex-col items-center gap-3">
-                          <span className="text-base font-normal">ID Photo</span>
+                          <span className="text-base font-normal">
+                            ID Photo
+                          </span>
                           <div className="rounded-xl overflow-hidden bg-white p-1 shadow-sm">
                             <ImageSlot
                               src={resolvedDetail.idPhotoUrl ?? undefined}
@@ -255,7 +288,8 @@ export default function DetailView({
                           <div className="flex items-center justify-between">
                             <p className="text-sm">Face Matching</p>
                             {(() => {
-                              const pct = resolvedDetail.faceMatchPercent ?? null;
+                              const pct =
+                                resolvedDetail.faceMatchPercent ?? null;
                               const grade = gradeConfidence(pct);
                               const badgeCls =
                                 grade === "High"
@@ -267,7 +301,12 @@ export default function DetailView({
                                   : "bg-muted text-muted-foreground";
                               return (
                                 <>
-                                  <Badge className={cn("border-none px-2 py-0.5 text-sm font-normal", badgeCls)}>
+                                  <Badge
+                                    className={cn(
+                                      "border-none px-2 py-0.5 text-sm font-normal",
+                                      badgeCls
+                                    )}
+                                  >
                                     {grade}
                                   </Badge>
                                 </>
@@ -281,7 +320,10 @@ export default function DetailView({
                 </SectionFrame>
 
                 {/* Bank Section */}
-                <SectionFrame title="Bank Verification" className="border-0 p-0 gap-0 shadow-none ring-0 ">
+                <SectionFrame
+                  title="Bank Verification"
+                  className="border-0 p-0 gap-0 shadow-none ring-0 "
+                >
                   <div className="bg-[#F9FAFC] rounded-[12px]">
                     <div className="py-6 px-4 space-y-4">
                       <div className="col-span-2">
@@ -292,8 +334,14 @@ export default function DetailView({
                           fallback="doc"
                         />
                       </div>
-                      <Field label="Account Name" value={resolvedDetail.accountName} />
-                      <Field label="Account Number" value={resolvedDetail.accountNumber} />
+                      <Field
+                        label="Account Name"
+                        value={resolvedDetail.accountName}
+                      />
+                      <Field
+                        label="Account Number"
+                        value={resolvedDetail.accountNumber}
+                      />
                       <Field label="Bank" value={resolvedDetail.bank} />
                       <Field label="Branch" value={resolvedDetail.branch} />
                       <Field
@@ -305,10 +353,14 @@ export default function DetailView({
                             <Badge
                               className={cn(
                                 "border-none px-2 py-0.5 text-sm font-normal",
-                                resolvedDetail.bankNameMatch ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"
+                                resolvedDetail.bankNameMatch
+                                  ? "bg-green-100 text-green-700"
+                                  : "bg-red-100 text-red-700"
                               )}
                             >
-                              {resolvedDetail.bankNameMatch ? "Match" : "Not match"}
+                              {resolvedDetail.bankNameMatch
+                                ? "Match"
+                                : "Not match"}
                             </Badge>
                           )
                         }
@@ -323,7 +375,13 @@ export default function DetailView({
           )}
 
           {/* Footer — ใช้ร่วมกันทั้งสองแท็บ */}
-          <div className={cn(dockFooter ? "p-4" : "sticky bottom-0 -mx-4 px-6 pb-4 pt-2 bg-background")}>
+          <div
+            className={cn(
+              dockFooter
+                ? "p-4"
+                : "sticky bottom-0 -mx-4 px-6 pb-4 pt-2 bg-background"
+            )}
+          >
             {footer ?? (
               <ActionFooter
                 status={visibleStatus}
@@ -355,13 +413,22 @@ export default function DetailView({
 function StatusBadge({ status }: { status?: UiStatus }) {
   if (!status) return null;
   return (
-    <Badge variant="outline" className={cn("border-none", STATUS_BADGE_CLASS[status])}>
+    <Badge
+      variant="outline"
+      className={cn("border-none", STATUS_BADGE_CLASS[status])}
+    >
       {status}
     </Badge>
   );
 }
 
-function Field({ label, value }: { label: string; value?: React.ReactNode | null }) {
+function Field({
+  label,
+  value,
+}: {
+  label: string;
+  value?: React.ReactNode | null;
+}) {
   return (
     <div className="flex items-center justify-between w-full ">
       <span className="text-xs font-normal">{label}</span>
@@ -385,7 +452,10 @@ function ImageSlot({
   height?: string | number; // รับได้ทั้ง string/number แต่จะถูกแปลงเป็น number ก่อนส่งให้ <Image/>
   fallback?: "doc" | "face";
 }) {
-  const fallbackSrc = fallback === "face" ? "/detail-view/no-people.jpg" : "/detail-view/no-pictures.png";
+  const fallbackSrc =
+    fallback === "face"
+      ? "/detail-view/no-people.jpg"
+      : "/detail-view/no-pictures.png";
   const finalSrc = src && String(src).trim() !== "" ? String(src) : fallbackSrc;
   const isExternal = /^https?:\/\//i.test(finalSrc);
 
@@ -480,7 +550,9 @@ function VerificationStatusBanner({ status }: { status?: UiStatus }) {
           />
         </div>
         <div>
-          <p className="text-sm font-normal text-semibold">Verification Status</p>
+          <p className="text-sm font-normal text-semibold">
+            Verification Status
+          </p>
           <p className={cn("text-sm text-normal text-black")}>
             Status : <span className={cn(T.textLink)}>{status ?? "N/A"}</span>
           </p>
@@ -507,9 +579,16 @@ function ActionFooter({
   if (status === "Rejected Override" || status === "Approved Override") {
     return (
       <div className="flex flex-1 justify-between items-center p-4 gap-2 rounded-[8px] text-black bg-[var(--Primary-Alert,_#FFB201)]">
-        <Image src="/mark/warning.svg" alt="Notice" width={24} height={24} className="size-[24px]" />
+        <Image
+          src="/mark/warning.svg"
+          alt="Notice"
+          width={24}
+          height={24}
+          className="size-[24px]"
+        />
         <p className="text-xs font-normal">
-          This KYC verification has been overrided and no further actions are requires
+          This KYC verification has been overrided and no further actions are
+          requires
         </p>
       </div>
     );
@@ -518,10 +597,16 @@ function ActionFooter({
   if (status === "Pending") {
     return (
       <div className="flex items-center justify-center gap-2">
-        <Button onClick={onAskApprove} className="flex-1 p-2 rounded-[12px] bg-[#17B26A] text-lg font-normal text-white hover:bg-[#067647]">
+        <Button
+          onClick={onAskApprove}
+          className="flex-1 p-2 rounded-[12px] bg-[#17B26A] text-lg font-normal text-white hover:bg-[#067647]"
+        >
           Approve
         </Button>
-        <Button onClick={onAskReject} className="flex-1 p-2 rounded-[12px] bg-[#D92D20] text-lg font-normal text-white hover:bg-[#912018]">
+        <Button
+          onClick={onAskReject}
+          className="flex-1 p-2 rounded-[12px] bg-[#D92D20] text-lg font-normal text-white hover:bg-[#912018]"
+        >
           Reject
         </Button>
       </div>
@@ -530,7 +615,10 @@ function ActionFooter({
 
   if (status === "Approved") {
     return (
-      <Button onClick={onAskOverride} className="w-full rounded-[12px] bg-[#D92D20] p-2 text-lg font-normal text-white hover:bg-[#912018]">
+      <Button
+        onClick={onAskOverride}
+        className="w-full rounded-[12px] bg-[#D92D20] p-2 text-lg font-normal text-white hover:bg-[#912018]"
+      >
         Override & Rejected
       </Button>
     );
@@ -538,7 +626,10 @@ function ActionFooter({
 
   if (status === "Rejected") {
     return (
-      <Button onClick={onAskOverride} className="w-full rounded-[12px] bg-[#17B26A] p-2 text-lg font-normal text-white hover:bg-[#067647]">
+      <Button
+        onClick={onAskOverride}
+        className="w-full rounded-[12px] bg-[#17B26A] p-2 text-lg font-normal text-white hover:bg-[#067647]"
+      >
         Override & Approve
       </Button>
     );
@@ -569,7 +660,8 @@ function ConfirmDialog({
         </>
       ),
       img: "/mark/correct-mark.png",
-      btnClass: "rounded-[12px] bg-[#1C55D9] text-white hover:bg-[#0F2D73] px-5 py-2",
+      btnClass:
+        "rounded-[12px] bg-[#1C55D9] text-white hover:bg-[#0F2D73] px-5 py-2",
       btnText: "Approve",
     },
     reject: {
@@ -582,7 +674,8 @@ function ConfirmDialog({
         </>
       ),
       img: "/mark/override-error.png",
-      btnClass: "rounded-[12px] bg-[#1C55D9] text-white hover:bg-[#0F2D73] px-5 py-2",
+      btnClass:
+        "rounded-[12px] bg-[#1C55D9] text-white hover:bg-[#0F2D73] px-5 py-2",
       btnText: "Reject",
     },
     override: {
@@ -595,7 +688,8 @@ function ConfirmDialog({
         </>
       ),
       img: "/mark/override-error.png",
-      btnClass: "rounded-[12px] bg-[#1C55D9] text-white hover:bg-[#0F2D73] px-5 py-2",
+      btnClass:
+        "rounded-[12px] bg-[#1C55D9] text-white hover:bg-[#0F2D73] px-5 py-2",
       btnText: "Override",
     },
   }[kind];
@@ -618,7 +712,13 @@ function ConfirmDialog({
         </div>
 
         <div className="flex flex-col items-center text-center">
-          <Image src={config.img} alt={config.title} width={120} height={120} priority />
+          <Image
+            src={config.img}
+            alt={config.title}
+            width={120}
+            height={120}
+            priority
+          />
           <h3 className="text-xl font-semibold mt-3 mb-1">{config.title}</h3>
           <p className="mt-1 mx-auto px-12 inline-block w-fit text-center text-[#4B5563] text-sm leading-5 font-normal">
             {config.desc}
@@ -633,7 +733,10 @@ function ConfirmDialog({
           >
             Cancel
           </Button>
-          <Button onClick={onConfirm} className={cn("flex-1 h-12 rounded-[12px]", config.btnClass)}>
+          <Button
+            onClick={onConfirm}
+            className={cn("flex-1 h-12 rounded-[12px]", config.btnClass)}
+          >
             {config.btnText}
           </Button>
         </DialogFooter>
