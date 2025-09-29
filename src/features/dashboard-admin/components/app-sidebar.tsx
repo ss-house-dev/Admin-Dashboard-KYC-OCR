@@ -2,9 +2,18 @@
 
 // logout
 import * as React from "react";
-import { LogOut } from "lucide-react";
-import { signOut } from "next-auth/react";
+import { CircleUser, LogOut } from "lucide-react";
+import { signOut, useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
+
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuItem,
+} from "@/components/ui/dropdown-menu";
 
 import {
   Bell,
@@ -24,6 +33,7 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarTrigger,
+  useSidebar,
 } from "@/components/ui/sidebar";
 import Image from "next/image";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -71,6 +81,25 @@ export function AppSidebar() {
     const origin = typeof window !== "undefined" ? window.location.origin : "";
     await signOut({ callbackUrl: `${origin}/sign-in`, redirect: true });
   }
+
+  const { open, setOpen } = useSidebar();
+
+  //ดึง user จาก session
+  const { data: session } = useSession();
+  const displayName =
+    (session?.user?.name && session.user.name.trim()) ||
+    (session?.user?.email ? session.user.email.split("@")[0] : "") ||
+    "User";
+  const email = session?.user?.email ?? "unknown@example.com";
+
+  // เมื่อมีการเปิด DetailView และ sidebar เปิดอยู่ → ปิด sidebar
+  React.useEffect(() => {
+    const handle = () => {
+      if (open) setOpen(false);
+    };
+    window.addEventListener("dashboard:detail-opened", handle);
+    return () => window.removeEventListener("dashboard:detail-opened", handle);
+  }, [open, setOpen]);
 
   return (
     <Sidebar className="h-full border-r bg-white p-0" collapsible="icon">
@@ -148,39 +177,68 @@ export function AppSidebar() {
         </SidebarGroup>
       </SidebarContent>
 
-      <Button
-        variant="outline"
-        className="mt-2 w-full gap-2"
-        onClick={handleLogout}
-        disabled={loading}
-      >
-        <LogOut className="h-4 w-4" />
-        {loading ? "Logging out..." : "Logout"}
-      </Button>
-
       {/* เพิ่มส่วน User Profile ที่ Sidebar Footer */}
-      <SidebarFooter className="border-t px-4 py-4">
+      <SidebarFooter>
         <SidebarMenu>
           <SidebarMenuItem>
-            <Button
-              variant="ghost"
-              className="w-full justify-between p-2 group-data-[collapsible=icon]:px-1"
-            >
-              <div className="flex items-center space-x-3">
-                <Avatar className="h-6 w-6">
-                  <AvatarImage
-                    src="https://avatars.githubusercontent.com/u/89658253?v=4"
-                    alt="@shadcn"
-                  />
-                  <AvatarFallback>AD</AvatarFallback>
-                </Avatar>
-                <div className="flex flex-col items-start group-data-[collapsible=icon]:hidden">
-                  <span className="font-semibold text-gray-900">Username</span>
-                  <span className="text-sm text-gray-500">Admin</span>
-                </div>
-              </div>
-              <ChevronRight className="h-4 w-4 text-gray-500 group-data-[collapsible=icon]:hidden" />
-            </Button>
+            <DropdownMenu modal={false}>
+              <DropdownMenuTrigger asChild>
+                {/* ปุ่ม User Profile เดิม — คง className/layoutเดิมทุกจุด */}
+                <Button
+                  variant="ghost"
+                  className="w-full flex items-center justify-between px-2 py-2"
+                >
+                  <div className="flex items-center gap-2">
+                    <Avatar className="h-8 w-8">
+                      {/* ถ้ามีรูปโปรไฟล์ใน session.user.image ก็ใส่ได้ */}
+                      <AvatarImage
+                        src={(session?.user as any)?.image ?? undefined}
+                      />
+                      <AvatarFallback>
+                        {displayName?.slice(0, 2)?.toUpperCase()}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="flex flex-col items-start group-data-[collapsible=icon]:hidden">
+                      {/* เดิม: Username / Admin → ปรับเป็นชื่อจริง/อีเมลของ user */}
+                      <span className="font-semibold text-gray-900">
+                        {displayName}
+                      </span>
+                      <span className="text-sm text-gray-500 truncate max-w-[160px]">
+                        {email}
+                      </span>
+                    </div>
+                  </div>
+                  <ChevronRight className="h-4 w-4 text-gray-500 group-data-[collapsible=icon]:hidden" />
+                </Button>
+              </DropdownMenuTrigger>
+
+              {/* เมนูเด้งขึ้น "ตรง User Profile" แบบในรูป */}
+              <DropdownMenuContent
+                side="top"
+                align="end"
+                sideOffset={8}
+                className="w-64"
+              >
+                <DropdownMenuLabel className="font-normal truncate">
+                  {email}
+                </DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  onClick={() => router.push("/admin-dashboard/profile")}
+                  className="cursor-pointer"
+                >
+                  <CircleUser className="mr-2 h-4 w-4" />
+                  <span>Profile setting</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={() => signOut({ callbackUrl: "/auth/signin" })}
+                  className="cursor-pointer"
+                >
+                  <LogOut className="mr-2 h-4 w-4" />
+                  <span>Log out</span>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </SidebarMenuItem>
         </SidebarMenu>
       </SidebarFooter>
