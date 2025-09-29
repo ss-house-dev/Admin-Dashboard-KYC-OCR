@@ -40,7 +40,7 @@ export function gradeConfidence(
   pct: number | null | undefined
 ): "High" | "Moderate" | "Low" | "N/A" {
   if (pct == null) return "N/A";
-  if (pct >= 85) return "High";
-  if (pct >= 65) return "Moderate";
-  return "Low";
+  if (pct >= 90) return "High"; // 90+
+  if (pct >= 70) return "Moderate"; // 70–89
+  return "Low"; // <70
 }
