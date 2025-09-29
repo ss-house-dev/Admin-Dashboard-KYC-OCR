@@ -673,7 +673,7 @@ function ConfirmDialog({
           this applicant?
         </>
       ),
-      img: "/mark/override-error.png",
+      img: "/mark/wrong-mark.png",
       btnClass:
         "rounded-[12px] bg-[#1C55D9] text-white hover:bg-[#0F2D73] px-5 py-2",
       btnText: "Reject",
@@ -715,8 +715,8 @@ function ConfirmDialog({
           <Image
             src={config.img}
             alt={config.title}
-            width={120}
-            height={120}
+            width={100}
+            height={100}
             priority
           />
           <h3 className="text-xl font-semibold mt-3 mb-1">{config.title}</h3>
