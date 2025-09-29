@@ -2,7 +2,6 @@
 
 // logout
 import * as React from "react";
-import { CircleUser, LogOut } from "lucide-react";
 import { signOut, useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 
@@ -224,10 +223,16 @@ export function AppSidebar() {
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator className="m-0" />
                 <DropdownMenuItem
-                  onClick={() => router.push("/admin-dashboard/profile")}
+                  onClick={() => router.push("#")}
                   className="font-normal truncate px-3 py-2 text-sm"
                 >
-                  <CircleUser className="mr-2 h-4 w-4"/>
+                  <Image
+                    src="/icons/account_circle.svg"
+                    alt=""
+                    width={20}
+                    height={20}
+                    className=""
+                  />
                   <span>Profile setting</span>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator className="m-0" />
@@ -235,7 +240,13 @@ export function AppSidebar() {
                   onClick={() => signOut({ callbackUrl: "/auth/signin" })}
                   className="font-normal truncate px-3 py-2 text-sm"
                 >
-                  <LogOut className="mr-2 h-4 w-4" />
+                  <Image
+                    src="/icons/keyboard_return.svg"
+                    alt=""
+                    width={20}
+                    height={20}
+                    className=""
+                  />
                   <span>sign out</span>
                 </DropdownMenuItem>
               </DropdownMenuContent>
