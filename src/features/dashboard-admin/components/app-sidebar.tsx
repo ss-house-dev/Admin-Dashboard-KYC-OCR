@@ -90,7 +90,7 @@ export function AppSidebar() {
     (session?.user?.name && session.user.name.trim()) ||
     (session?.user?.email ? session.user.email.split("@")[0] : "") ||
     "User";
-  const email = session?.user?.email ?? "unknown@example.com";
+  const email = session?.user?.email ?? "whalaroratrading@gmail.com";
 
   // เมื่อมีการเปิด DetailView และ sidebar เปิดอยู่ → ปิด sidebar
   React.useEffect(() => {
@@ -178,7 +178,7 @@ export function AppSidebar() {
       </SidebarContent>
 
       {/* เพิ่มส่วน User Profile ที่ Sidebar Footer */}
-      <SidebarFooter>
+      <SidebarFooter className="border-t p-4 pl-1">
         <SidebarMenu>
           <SidebarMenuItem>
             <DropdownMenu modal={false}>
@@ -186,7 +186,7 @@ export function AppSidebar() {
                 {/* ปุ่ม User Profile เดิม — คง className/layoutเดิมทุกจุด */}
                 <Button
                   variant="ghost"
-                  className="w-full flex items-center justify-between px-2 py-2"
+                  className="w-full flex items-center justify-between py-2 pl-4"
                 >
                   <div className="flex items-center gap-2">
                     <Avatar className="h-8 w-8">
@@ -217,25 +217,26 @@ export function AppSidebar() {
                 side="top"
                 align="end"
                 sideOffset={8}
-                className="w-64"
+                className="w-auto p-0"
               >
-                <DropdownMenuLabel className="font-normal truncate">
+                <DropdownMenuLabel className="font-normal truncate px-3 py-2 text-sm">
                   {email}
                 </DropdownMenuLabel>
-                <DropdownMenuSeparator />
+                <DropdownMenuSeparator className="m-0" />
                 <DropdownMenuItem
                   onClick={() => router.push("/admin-dashboard/profile")}
-                  className="cursor-pointer"
+                  className="font-normal truncate px-3 py-2 text-sm"
                 >
-                  <CircleUser className="mr-2 h-4 w-4" />
+                  <CircleUser className="mr-2 h-4 w-4"/>
                   <span>Profile setting</span>
                 </DropdownMenuItem>
+                <DropdownMenuSeparator className="m-0" />
                 <DropdownMenuItem
                   onClick={() => signOut({ callbackUrl: "/auth/signin" })}
-                  className="cursor-pointer"
+                  className="font-normal truncate px-3 py-2 text-sm"
                 >
                   <LogOut className="mr-2 h-4 w-4" />
-                  <span>Log out</span>
+                  <span>sign out</span>
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
