@@ -619,7 +619,7 @@ function ActionFooter({
         onClick={onAskOverride}
         className="w-full rounded-[12px] bg-[#D92D20] p-2 text-lg font-normal text-white hover:bg-[#912018]"
       >
-        Override & Rejected
+        Override & Reject
       </Button>
     );
   }
