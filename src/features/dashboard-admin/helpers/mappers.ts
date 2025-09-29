@@ -13,7 +13,8 @@ const STORAGE_BASE: string =
 /** สร้าง URL สำหรับไฟล์จาก MinIO */
 function buildStorageUrl(filename?: string | null): string | null {
   if (!filename || filename.trim() === "") return null;
-  return STORAGE_BASE + filename;
+  const encoded = encodeURIComponent(filename);
+  return STORAGE_BASE + encoded;
 }
 
 /** โครงสร้าง entry ของ images (ไม่ไปแก้ type ต้นฉบับ) */
