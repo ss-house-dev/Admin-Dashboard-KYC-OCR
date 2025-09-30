@@ -73,13 +73,13 @@ export function AppSidebar() {
   const router = useRouter();
   const [_loading, _setLoading] = React.useState(false);
 
-  async function _handleLogout() {
-    try {
-      await fetch("/api/logout", { method: "POST" });
-    } catch {}
-    const origin = typeof window !== "undefined" ? window.location.origin : "";
-    await signOut({ callbackUrl: `${origin}/sign-in`, redirect: true });
-  }
+  // async function _handleLogout() {
+  //   try {
+  //     await fetch("/api/logout", { method: "POST" });
+  //   } catch {}
+  //   const origin = typeof window !== "undefined" ? window.location.origin : "";
+  //   await signOut({ callbackUrl: `${origin}/sign-in`, redirect: true });
+  // }
 
   const { open, setOpen } = useSidebar();
 
@@ -238,7 +238,7 @@ export function AppSidebar() {
                 </DropdownMenuItem>
                 <DropdownMenuSeparator className="m-0" />
                 <DropdownMenuItem
-                  onClick={() => signOut({ callbackUrl: "/auth/signin" })}
+                  onClick={() => signOut({ callbackUrl: "/signin" })}
                   className="font-normal truncate px-3 py-2 text-sm"
                 >
                   <Image
