@@ -18,7 +18,7 @@ export function useKycData(defaultValues?: Partial<Filters>) {
   // Data สำหรับตาราง
   const [items, setItems] = useState<(Kycrequest & { __keys: string })[]>([]);
   const [total, setTotal] = useState<number>(0);
-  const [nextPage, setNextPage] = useState<number>(1);
+  const [_nextPage, setNextPage] = useState<number>(1);
 
   // Data เต็มจาก API
   const [rawData, setRawData] = useState<CompanyAllData | null>(null);

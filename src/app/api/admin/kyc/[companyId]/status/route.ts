@@ -14,9 +14,9 @@ const API_KYC_REQUEST =
 
 export async function PATCH(
   req: NextRequest,
-  ctx: { params: { companyId: string } }
+  { params }: { params: Promise<{ companyId: string }> } // ⬅️ Next.js 15: params เป็น Promise
 ) {
-  const { companyId } = ctx.params;
+  const { companyId } = await params; // ⬅️ ต้อง await ก่อนดึงค่า
 
   let body: PatchBody | null = null;
   try {
@@ -65,7 +65,7 @@ export async function PATCH(
           upstream.headers.get("content-type") ?? "application/json",
       },
     });
-  } catch (e) {
+  } catch {
     return NextResponse.json({ error: "Upstream error" }, { status: 502 });
   }
 }

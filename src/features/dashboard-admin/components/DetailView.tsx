@@ -1,10 +1,11 @@
 "use client";
 
 import Image from "next/image";
+import type { Session } from "next-auth";
 import * as React from "react";
 import { useDetailView } from "../hooks/useDetailView";
 import { useDockFooter } from "../hooks/useDockFooter";
-import { fmtDate, gradeConfidence } from "../helpers/format";
+import { gradeConfidence } from "../helpers/format";
 import { STATUS_BADGE_CLASS } from "../helpers/status";
 import type { KycRequestApi } from "../types/kyc";
 import type { DetailVM, UiStatus, ConfirmKind } from "../types/detail";
@@ -26,7 +27,11 @@ import {
 
 /* ================= Types =================
    (คงไว้ที่นี่เพราะเป็นหน้าจอ UI หลัก; ชนิดเพิ่มเติมไปอยู่ที่ features/.../types/detail.ts)
+   
 */
+
+type SessionWithAccessToken = Session & { accessToken?: string };
+
 export type { UiStatus, DetailVM, ConfirmKind };
 
 /* ============ Main ============ */
@@ -102,15 +107,24 @@ export default function DetailView({
   React.useEffect(() => {
     console.groupCollapsed("[DetailView] session snapshot");
     console.log("authStatus:", authStatus);
-    console.log("has accessToken:", Boolean((session as any)?.accessToken));
-    const token: string | undefined = (session as any)?.accessToken;
+
+    // ดึง accessToken แบบ type-safe (ไม่พึ่ง any)
+    const token =
+      session &&
+      typeof (session as SessionWithAccessToken).accessToken === "string"
+        ? (session as SessionWithAccessToken).accessToken
+        : undefined;
+
+    console.log("has accessToken:", Boolean(token));
     if (token) {
       console.log(
         "accessToken preview:",
         token.slice(0, 6) + "…" + token.slice(-4)
       );
     }
-    console.log("session.user:", (session as any)?.user);
+
+    // log ผู้ใช้ตรง ๆ แบบ type-safe
+    console.log("session.user:", session?.user);
     console.groupEnd();
   }, [session, authStatus]);
 
@@ -419,6 +433,7 @@ export default function DetailView({
 }
 
 /* ============ helpers UI (คงสไตล์เดิมทุกจุด) ============ */
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 function StatusBadge({ status }: { status?: UiStatus }) {
   if (!status) return null;
   return (
