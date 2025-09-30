@@ -71,9 +71,9 @@ const secondaryItems = [
 export function AppSidebar() {
   //logout
   const router = useRouter();
-  const [loading, setLoading] = React.useState(false);
+  const [_loading, _setLoading] = React.useState(false);
 
-  async function handleLogout() {
+  async function _handleLogout() {
     try {
       await fetch("/api/logout", { method: "POST" });
     } catch {}
@@ -90,6 +90,9 @@ export function AppSidebar() {
     (session?.user?.email ? session.user.email.split("@")[0] : "") ||
     "User";
   const email = session?.user?.email ?? "whalaroratrading@gmail.com";
+
+  const avatarSrc =
+    typeof session?.user?.image === "string" ? session.user.image : undefined;
 
   // เมื่อมีการเปิด DetailView และ sidebar เปิดอยู่ → ปิด sidebar
   React.useEffect(() => {
@@ -190,9 +193,7 @@ export function AppSidebar() {
                   <div className="flex items-center gap-2">
                     <Avatar className="h-8 w-8">
                       {/* ถ้ามีรูปโปรไฟล์ใน session.user.image ก็ใส่ได้ */}
-                      <AvatarImage
-                        src={(session?.user as any)?.image ?? undefined}
-                      />
+                      <AvatarImage src={avatarSrc} />
                       <AvatarFallback>
                         {displayName?.slice(0, 2)?.toUpperCase()}
                       </AvatarFallback>
