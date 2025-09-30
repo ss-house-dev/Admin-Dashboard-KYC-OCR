@@ -10,10 +10,22 @@ const STORAGE_BASE: string =
     "http://141.11.156.52:3208/storage/files/"
   ).replace(/\/+$/, "") + "/";
 
-/** สร้าง URL สำหรับไฟล์จาก MinIO โดย encode ทั้ง path */
+/** สร้าง URL สำหรับไฟล์จาก MinIO
+ * - ถ้าใช้ proxy (/api/storage/files/) → ห้าม encode "/" (ให้เป็น path segments)
+ * - ถ้าเรียกตรง MinIO → ต้อง encode ทั้งสตริง ("/" → "%2F")
+ */
 function buildStorageUrl(filename?: string | null): string | null {
   if (!filename || filename.trim() === "") return null;
-  return STORAGE_BASE + encodeURIComponent(filename);
+  const base = STORAGE_BASE.replace(/\/+$/, "") + "/";
+
+  // ✅ เคส proxy ของเรา: ไม่ encode "/" เพื่อให้ router จับ [...path] ได้ถูก
+  if (base.startsWith("/api/storage/files/")) {
+    // ตัวอย่างผลลัพธ์: /api/storage/files/68db.../face/verify/xxx.jpg
+    return base + filename;
+  }
+
+  // ✅ เคสเรียกตรง MinIO: ต้อง encode ทั้ง path ("/" → "%2F")
+  return base + encodeURIComponent(filename);
 }
 
 // ดึงจาก idcardEdit” และ “แปลง / → - เฉพาะสองฟิลด์

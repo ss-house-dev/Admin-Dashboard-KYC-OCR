@@ -238,7 +238,7 @@ export function AppSidebar() {
                 </DropdownMenuItem>
                 <DropdownMenuSeparator className="m-0" />
                 <DropdownMenuItem
-                  onClick={() => signOut({ callbackUrl: "/signin" })}
+                  onClick={() => signOut({ callbackUrl: "/sign-in" })}
                   className="font-normal truncate px-3 py-2 text-sm"
                 >
                   <Image
