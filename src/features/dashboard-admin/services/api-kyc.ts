@@ -25,9 +25,9 @@ export async function fetchKycRequests(params: {
   limit?: number;
   page?: number;
   embed?: boolean;
-  status?: string;    
-  startDate?: string;   
-  endDate?: string;    
+  status?: string;
+  startDate?: string;
+  endDate?: string;
 
   correlationId?: string;
   email?: string;
@@ -37,7 +37,7 @@ export async function fetchKycRequests(params: {
   const {
     accessToken,
     companyId,
-    completedOnly = false,
+    completedOnly, //= false เอาอันที่่ไม่เสร็จ
     limit = 100,
     page = 1,
     embed = true,
@@ -109,8 +109,6 @@ export async function fetchDashboardKyc(
   return { companyId, data };
 }
 
-
-
 // ====== UPDATE STATUS (PATCH) - ใช้กับ Proxy API ======
 
 export type ApiStatus =
@@ -120,7 +118,7 @@ export type ApiStatus =
   | "rejected override";
 
 export type UpdateKycStatusPayload = {
-  id: string;        // = KycRequestApi.id
+  id: string; // = KycRequestApi.id
   status: ApiStatus; // ค่าต้องตรงตาม backend
 };
 
