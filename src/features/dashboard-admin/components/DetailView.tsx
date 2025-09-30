@@ -252,73 +252,82 @@ export default function DetailView({
                   className="border-0 p-0 gap-0 shadow-none ring-0 "
                 >
                   <div className="bg-[#F9FAFC] rounded-[12px]">
-                    <div className="p-4 flex items-center gap-2">
+                    <div className="px-4 py-6 flex items-center flex-end gap-2 overflow-hidden">
                       {/* ซ้าย: ID Photo / Selfie */}
-                      <div className="flex gap-2">
-                        <div className="flex flex-col items-center gap-3">
+                      <div className="flex gap-2 shrink-0">
+                        <div className="flex flex-col items-center gap-2">
                           <span className="text-base font-normal">
                             ID Photo
                           </span>
-                          <div className="rounded-xl overflow-hidden bg-white p-1 shadow-sm">
-                            <ImageSlot
-                              src={resolvedDetail.idPhotoUrl ?? undefined}
-                              alt="ID Photo"
-                              height="h-24"
-                              fallback="face"
-                            />
-                          </div>
+                          <FaceThumb
+                            src={resolvedDetail.idPhotoUrl ?? undefined}
+                            alt="ID Photo"
+                          />
                         </div>
 
-                        <div className="flex flex-col items-center gap-3">
+                        <div className="flex flex-col items-center gap-2">
                           <span className="text-base font-normal">Selfie</span>
-                          <div className="rounded-xl overflow-hidden bg-white p-1 shadow-sm">
-                            <ImageSlot
-                              src={resolvedDetail.selfieUrl ?? undefined}
-                              alt="Selfie"
-                              height="h-24"
-                              fallback="face"
-                            />
-                          </div>
+                          <FaceThumb
+                            src={resolvedDetail.selfieUrl ?? undefined}
+                            alt="Selfie"
+                          />
                         </div>
                       </div>
 
-                      {/* ขวา: คะแนน */}
-                      <div className="flex-1 ml-2">
-                        <div className="rounded-lg bg-white p-3 grid gap-1">
-                          <div className="flex items-center justify-between">
-                            <p className="text-sm">Face Matching</p>
-                            {(() => {
-                              const pct =
-                                resolvedDetail.faceMatchPercent ?? null;
-                              const grade = gradeConfidence(pct);
-                              const badgeCls =
-                                grade === "High"
-                                  ? "bg-green-100 text-green-700"
-                                  : grade === "Moderate"
-                                  ? "bg-[#FFF7E6] text-[#B45309]"
-                                  : grade === "Low"
-                                  ? "bg-[#FEE2E2] text-[#B91C1C]"
-                                  : "bg-muted text-muted-foreground";
-                              return (
-                                <>
-                                  <Badge
-                                    className={cn(
-                                      "border-none px-2 py-0.5 text-sm font-normal",
-                                      badgeCls
-                                    )}
-                                  >
-                                    {grade}
-                                  </Badge>
-                                </>
-                              );
-                            })()}
-                          </div>
-                        </div>
+                      {/* ขวา: เปอร์เซ็นต์ + เกรด (แนวตั้ง กลางเหมือนตัวอย่าง) */}
+                      <div className="flex-1 min-w-0 flex self-stretch items-end justify-center">
+                        {(() => {
+                          const pct = resolvedDetail.faceMatchPercent ?? null; // 0..100
+                          const pctText = pct == null ? "N/A" : `${pct}%`;
+
+                          const grade = gradeConfidence(pct); // Low <70, Moderate 70–89, High ≥90
+
+                          const pctColorCls =
+                            grade === "High"
+                              ? "text-[#17B26A]" // เขียว
+                              : grade === "Moderate"
+                              ? "text-[#F79009]" // ส้ม/น้ำตาล (ให้แมตช์ badge)
+                              : grade === "Low"
+                              ? "text-[#F04438]" // แดง
+                              : "text-muted-foreground"; // N/A
+
+                          const badgeCls =
+                            grade === "High"
+                              ? "bg-[#DBFAE6] text-[#494949] border-[#17B26A]"
+                              : grade === "Moderate"
+                              ? "bg-[#FEEFC7] text-[#494949] border-[#FDB022]"
+                              : grade === "Low"
+                              ? "bg-[#FEE4E2] text-[#494949] border-[#D92D20]"
+                              : "bg-muted text-muted-foreground";
+
+                          return (
+                            <div className="flex flex-col items-center justify-center text-center gap-3 min-w-0">
+                              <div
+                                className={cn(
+                                  "text-[32px] font-semibold inline-block leading-none whitespace-nowrap",
+                                  pctColorCls
+                                )}
+                              >
+                                {pctText}
+                              </div>
+                              <div className="text-[12px] text-[#212121] font-normal whitespace-nowrap truncate max-w-full">
+                                Confidence
+                              </div>
+                              <Badge
+                                className={cn(
+                                  "border-t px-2 py-1 text-sm font-normal",
+                                  badgeCls
+                                )}
+                              >
+                                {grade}
+                              </Badge>
+                            </div>
+                          );
+                        })()}
                       </div>
                     </div>
                   </div>
                 </SectionFrame>
-
                 {/* Bank Section */}
                 <SectionFrame
                   title="Bank Verification"
@@ -478,6 +487,29 @@ function ImageSlot({
         style={{ objectFit: "cover", width: "100%", height: "auto" }}
         unoptimized={isExternal}
       />
+    </div>
+  );
+}
+
+function FaceThumb({ src, alt }: { src?: string | null; alt: string }) {
+  const finalSrc =
+    src && String(src).trim() !== ""
+      ? String(src)
+      : "/detail-view/no-people.jpg";
+  const isExternal = /^https?:\/\//i.test(finalSrc);
+  return (
+    <div className="rounded-[9px] overflow-hidden bg-white p-1 shadow-sm">
+      <div className="w-[92px] h-[106px] shrink-0 rounded-xl">
+        <Image
+          src={finalSrc}
+          alt={alt}
+          width={92}
+          height={106}
+          className="rounded-[9px]"
+          style={{ objectFit: "cover", width: 92, height: 106 }}
+          unoptimized={isExternal}
+        />
+      </div>
     </div>
   );
 }
@@ -673,7 +705,7 @@ function ConfirmDialog({
           this applicant?
         </>
       ),
-      img: "/mark/wrong-mark.png",
+      img: "/mark/override-error.png",
       btnClass:
         "rounded-[12px] bg-[#1C55D9] text-white hover:bg-[#0F2D73] px-5 py-2",
       btnText: "Reject",
@@ -715,8 +747,8 @@ function ConfirmDialog({
           <Image
             src={config.img}
             alt={config.title}
-            width={100}
-            height={100}
+            width={120}
+            height={120}
             priority
           />
           <h3 className="text-xl font-semibold mt-3 mb-1">{config.title}</h3>
