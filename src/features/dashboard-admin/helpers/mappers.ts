@@ -16,6 +16,12 @@ function buildStorageUrl(filename?: string | null): string | null {
   return STORAGE_BASE + encodeURIComponent(filename);
 }
 
+// ดึงจาก idcardEdit” และ “แปลง / → - เฉพาะสองฟิลด์
+function slashToHyphen(input?: string | null): string | null {
+  if (input == null) return null;
+  return input.includes("/") ? input.replace(/\//g, "-") : input;
+}
+
 /** โครงสร้าง images แต่ละ entry (ไม่แก้ type ต้นฉบับ) */
 type KycImageEntry = {
   type: string;
@@ -99,10 +105,10 @@ export function fromApiToDetailVM(api: KycRequestApi): DetailVM {
      - face-verify  → ID Photo (ใช้รูปสุดท้าย; ปกติ 1 ไฟล์)
      - face-create  → Selfie (ใช้ "รูปแรก" ตามคำสั่ง)
   */
-  const idcardFromImages   = resolveLastImageUrl(api, "idcard-front");
+  const idcardFromImages = resolveLastImageUrl(api, "idcard-front");
   const bookbankFromImages = resolveLastImageUrl(api, "bookbank");
-  const idPhotoFromImages  = resolveLastImageUrl(api, "face-verify");
-  const selfieFromImages   = resolveFirstImageUrl(api, "face-create");
+  const idPhotoFromImages = resolveLastImageUrl(api, "face-verify");
+  const selfieFromImages = resolveFirstImageUrl(api, "face-create");
 
   // ===== DataLog mapping =====
   const idThaiOriginal =
@@ -157,16 +163,17 @@ export function fromApiToDetailVM(api: KycRequestApi): DetailVM {
     fullNameEng,
     idNumber: api.idcardEdit?.idNumber ?? null,
     laserId: getStringField(api.idcardEdit, "laserId"),
-    dateOfBirth: api.idcardEdit?.dateOfBirth ?? null,
-    dateOfExpiry: api.idcardEdit?.dateOfExpiry ?? null,
+    dateOfBirth: slashToHyphen(api.idcardEdit?.dateOfBirth),
+    dateOfExpiry: slashToHyphen(api.idcardEdit?.dateOfExpiry),
 
     // Face
     idPhotoUrl: idPhotoFromImages ?? getStringField(api, "idPhotoUrl"),
-    selfieUrl:   selfieFromImages ?? getStringField(api, "selfieUrl"),
+    selfieUrl: selfieFromImages ?? getStringField(api, "selfieUrl"),
     faceMatchPercent: facePct,
 
     // Bank
-    bankBookImageUrl: bookbankFromImages ?? getStringField(api, "bankBookImageUrl"),
+    bankBookImageUrl:
+      bookbankFromImages ?? getStringField(api, "bankBookImageUrl"),
     accountName:
       api.bookbankEdit?.accountNameThai ??
       api.bookbankOrigin?.accountNameThai ??

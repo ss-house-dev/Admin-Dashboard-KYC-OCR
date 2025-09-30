@@ -236,11 +236,11 @@ export default function DetailView({
                       <Field label="Laser ID" value={resolvedDetail.laserId} />
                       <Field
                         label="Date of Birth"
-                        value={fmtDate(resolvedDetail.dateOfBirth)}
+                        value={resolvedDetail.dateOfBirth ?? "N/A"}
                       />
                       <Field
                         label="Date of Expiry"
-                        value={fmtDate(resolvedDetail.dateOfExpiry)}
+                        value={resolvedDetail.dateOfExpiry ?? "N/A"}
                       />
                     </div>
                   </div>
