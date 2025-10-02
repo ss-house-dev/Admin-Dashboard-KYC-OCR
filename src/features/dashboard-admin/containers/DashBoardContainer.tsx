@@ -13,6 +13,7 @@ import { LoadingSpinner } from "@/components/LoadingSpinner";
 import { ErrorView } from "@/components/ErrorView";
 import { signOut } from "next-auth/react";
 import { isAxiosError } from "axios";
+import { useKycRequestsSSE } from "../hooks/useKycRequestsSSE";
 
 export default function DashBoardContainer() {
   const {
@@ -26,7 +27,69 @@ export default function DashBoardContainer() {
     rawData,
     pagination,
     setPagination,
+    fetchData,
+    appliedFilters,
   } = useKycData();
+
+  // --- Begin: SSE live updates (ไม่เปลี่ยน UI) ---
+  const refreshLockRef = React.useRef<number | null>(null);
+  const safeRefresh = React.useCallback(() => {
+    // กันยิงถี่: รีเฟรชได้ทุก ~500ms
+    if (refreshLockRef.current) return;
+    refreshLockRef.current = window.setTimeout(() => {
+      if (refreshLockRef.current) window.clearTimeout(refreshLockRef.current);
+      refreshLockRef.current = null;
+    }, 500);
+    fetchData(); // ดึงข้อมูลด้วยตัวกรองเดิมจาก hook
+  }, [fetchData]);
+
+  // เลือก companyId สำหรับ SSE:
+  // 1) จาก appliedFilters.companyId (ถ้ามี)
+  // 2) จาก ENV NEXT_PUBLIC_COMPANY_ID
+  // 3) จากรายการแรกใน rawData (fallback)
+  const companyIdForSSE =
+    (appliedFilters as any)?.companyId ||
+    (process.env.NEXT_PUBLIC_COMPANY_ID as string | undefined) ||
+    (rawData?.data?.items?.[0]?.companyId as string | undefined);
+
+  // รวมพารามิเตอร์ที่อยากผูกกับ SSE ตามตัวกรองที่มีจริง
+  const sseFilters = React.useMemo(() => {
+    if (!companyIdForSSE) return null;
+    return {
+      companyId: companyIdForSSE,
+      status: appliedFilters?.status ?? undefined,
+      startDate: appliedFilters?.startDate ?? undefined,
+      endDate: appliedFilters?.endDate ?? undefined,
+      // เพิ่มเติมพารามิเตอร์อื่นได้ตามที่มีในระบบ
+      embed: true,
+      completedOnly: false,
+    };
+  }, [
+    companyIdForSSE,
+    appliedFilters?.status,
+    appliedFilters?.startDate,
+    appliedFilters?.endDate,
+  ]);
+
+  useKycRequestsSSE<KycRequestApi | { items: KycRequestApi[] }>(sseFilters, {
+    onOpen: () => {
+      // console.log("SSE connected");
+    },
+    onEvent: (name) => {
+      // มี event มา → refresh รายการ (ปลอดภัย ไม่แตะ UI)
+      if (name === "snapshot" || name === "update" || name === "delete") {
+        safeRefresh();
+      }
+    },
+    onMessage: () => {
+      // กรณี backend ส่ง default message
+      safeRefresh();
+    },
+    onError: () => {
+      // ปล่อยว่างได้ EventSource จะ reconnect เอง
+    },
+  });
+  // --- End: SSE live updates ---
 
   const [detailOpen, setDetailOpen] = React.useState(false);
   const [selected, setSelected] = React.useState<KycRequestApi | null>(null);
