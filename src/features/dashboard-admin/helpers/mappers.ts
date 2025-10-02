@@ -116,6 +116,7 @@ export function fromApiToDetailVM(api: KycRequestApi): DetailVM {
       api.idcardOrigin?.firstNameThai,
       api.idcardOrigin?.lastNameThai
     );
+  const laserId: string | null = getStringField(api.idcardEdit, "laserId");
 
   const fullNameEng =
     coalesceName(api.idcardEdit?.firstNameEng, api.idcardEdit?.lastNameEng) ??
@@ -216,6 +217,7 @@ export function fromApiToDetailVM(api: KycRequestApi): DetailVM {
         engOriginalName: idEngOriginal,
         engEditedName: idEngEditedForUI,
         engSimilarityPercent: idEngPct,
+        laserId,
       },
       bankBook: {
         thaiOriginalName: bbThaiOriginal,

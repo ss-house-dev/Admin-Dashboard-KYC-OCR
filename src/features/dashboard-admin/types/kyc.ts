@@ -26,6 +26,7 @@ export type IdcardDoc = {
   lastNameThai: string;
   titleNameEng: string;   
   titleNameThai: string;
+  laserId?: string | null;
 };
 
 export type BookbankOrigin = {
