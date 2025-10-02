@@ -28,6 +28,16 @@ import {
 import { cn } from "@/lib/utils";
 import { DataTablePagination } from "./DataTable-pagination";
 
+// ✅ ขยาย type ของ TableMeta ให้รู้จัก meta ที่เราส่งลงไป
+declare module "@tanstack/react-table" {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  interface TableMeta<TData> {
+    onViewRow?: (rowOriginal: TData) => void;
+    activeKey?: string | null;
+    getRowKey?: (rowOriginal: TData) => string;
+  }
+}
+
 /** payload ที่ DetailView ยิงออกมาเมื่ออัปเดตสถานะสำเร็จ */
 type KycStatusUpdatedDetail = {
   companyId: string;
@@ -71,6 +81,9 @@ export function DataTable<TData, TValue>({
     setRows(data);
   }, [data]);
 
+  // เก็บแถวที่กำลังดู Detail อยู่ (ใช้ txnNo ถ้ามี, ถ้าไม่มีก็ fallback เป็น row.id)
+  const [activeKey, setActiveKey] = React.useState<string | null>(null);
+
   /** ฟังอีเวนต์จาก DetailView → แก้สถานะของแถวที่ transactionNo ตรงกับ correlationId */
   React.useEffect(() => {
     const handler = (ev: Event) => {
@@ -111,15 +124,49 @@ export function DataTable<TData, TValue>({
       );
   }, []);
 
-  const table = useReactTable({
-    data: rows, // ⬅ ใช้ state ภายในแทน props.data
+  // เคลียร์ไฮไลต์เมื่อปิด DetailView
+  React.useEffect(() => {
+    const clear = () => setActiveKey(null);
+    window.addEventListener("dashboard:detail-closed", clear);
+    return () => window.removeEventListener("dashboard:detail-closed", clear);
+  }, []);
+
+  // คำนวณคีย์ของแถว (ใช้ transactionNo > correlationId > "")
+  const computeRowKey = React.useCallback((ro: Record<string, unknown>) => {
+    return typeof ro["transactionNo"] === "string"
+      ? (ro["transactionNo"] as string)
+      : typeof ro["correlationId"] === "string"
+      ? (ro["correlationId"] as string)
+      : "";
+  }, []);
+
+  // เปิดจากปุ่มใน cell
+  const handleViewFromButton = React.useCallback(
+    (rowOriginal: TData) => {
+      const key = computeRowKey(
+        rowOriginal as unknown as Record<string, unknown>
+      );
+      setActiveKey(key || null);
+      onView?.(rowOriginal); // ← เดิมคุณเปิดจาก onView อยู่แล้ว
+    },
+    [computeRowKey, onView]
+  );
+
+  // ส่ง meta ลง table
+  const table = useReactTable<TData>({
+    data: rows,
     columns,
     getCoreRowModel: getCoreRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
     state: pagination ? { pagination } : undefined,
     onPaginationChange,
+    meta: {
+      onViewRow: handleViewFromButton,
+      activeKey,
+      getRowKey: (rowOriginal: TData) =>
+        computeRowKey(rowOriginal as unknown as Record<string, unknown>),
+    },
   });
-
   return (
     <>
       <div
@@ -170,24 +217,37 @@ export function DataTable<TData, TValue>({
               </TableRow>
             ))}
           </TableHeader>
+
           <TableBody>
             {table.getRowModel().rows?.length ? (
-              table.getRowModel().rows.map((row) => (
-                <TableRow
-                  key={row.id}
-                  data-state={row.getIsSelected() && "selected"}
-                  onClick={() => onView?.(row.original)}
-                >
-                  {row.getVisibleCells().map((cell) => (
-                    <TableCell key={cell.id}>
-                      {flexRender(
-                        cell.column.columnDef.cell,
-                        cell.getContext()
-                      )}
-                    </TableCell>
-                  ))}
-                </TableRow>
-              ))
+              table.getRowModel().rows.map((row) => {
+                const ro = row.original as unknown as Record<string, unknown>;
+                const rowKey =
+                  table.options.meta?.getRowKey?.(row.original as TData) ??
+                  (typeof ro["transactionNo"] === "string"
+                    ? (ro["transactionNo"] as string)
+                    : row.id);
+
+                const isActive =
+                  (table.options.meta?.activeKey ?? null) === rowKey;
+
+                return (
+                  <TableRow
+                    key={row.id}
+                    data-state={isActive ? "selected" : undefined} // ← ค้าง hover/selected ทั้งแถว
+                    className="data-[state=selected]:bg-muted/50"
+                  >
+                    {row.getVisibleCells().map((cell) => (
+                      <TableCell key={cell.id}>
+                        {flexRender(
+                          cell.column.columnDef.cell,
+                          cell.getContext()
+                        )}
+                      </TableCell>
+                    ))}
+                  </TableRow>
+                );
+              })
             ) : (
               <TableRow>
                 <TableCell
