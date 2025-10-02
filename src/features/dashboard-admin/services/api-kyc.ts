@@ -37,7 +37,7 @@ export async function fetchKycRequests(params: {
   const {
     accessToken,
     companyId,
-    completedOnly, //= false เอาอันที่่ไม่เสร็จ
+    completedOnly = false, //= false เอาอันที่่ไม่เสร็จ
     limit = 100,
     page = 1,
     embed = true,
