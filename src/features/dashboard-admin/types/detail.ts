@@ -16,6 +16,7 @@ export type DataLogVM = {
     engOriginalName?: string | null;
     engEditedName?: string | null;
     engSimilarityPercent?: number | null; // 0..100
+    laserId: string | null;
   };
   bankBook?: {
     thaiOriginalName?: string | null;
