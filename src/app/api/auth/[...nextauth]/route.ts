@@ -145,13 +145,13 @@ export const authOptions: NextAuthOptions = {
           refreshExpiresIn: d.refreshExpiresIn,
         };
 
-        console.log("[Auth] authorize() result:", {
-          userId: out.id,
-          name: out.name,
-          role: out.role ?? "(none)",
-          hasAccessToken: Boolean(out.accessToken),
-          hasRefreshToken: Boolean(out.refreshToken),
-        });
+        // console.log("[Auth] authorize() result:", {
+        //   userId: out.id,
+        //   name: out.name,
+        //   role: out.role ?? "(none)",
+        //   hasAccessToken: Boolean(out.accessToken),
+        //   hasRefreshToken: Boolean(out.refreshToken),
+        // });
 
         return out;
       },
@@ -178,12 +178,12 @@ export const authOptions: NextAuthOptions = {
           Number(process.env.REFRESH_MAX_AGE_SEC ?? 60 * 60 * 24 * 30);
         t.refreshTokenExpires = Date.now() + refreshTtlSec * 1000;
 
-        console.log("[Auth] Login success:", {
-          userId: t.id,
-          role: t.role ?? "(none)",
-          accessTokenExpiresAt: new Date(t.accessTokenExpires).toISOString(),
-          refreshTokenExpiresAt: new Date(t.refreshTokenExpires).toISOString(),
-        });
+        // console.log("[Auth] Login success:", {
+        //   userId: t.id,
+        //   role: t.role ?? "(none)",
+        //   accessTokenExpiresAt: new Date(t.accessTokenExpires).toISOString(),
+        //   refreshTokenExpiresAt: new Date(t.refreshTokenExpires).toISOString(),
+        // });
 
         return t;
       }
