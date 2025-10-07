@@ -1,4 +1,3 @@
-import * as React from "react";
 import { useState, useEffect, useCallback } from "react";
 import { type PaginationState } from "@tanstack/react-table";
 import { isAxiosError } from "axios";
@@ -89,104 +88,104 @@ export function useKycData(defaultValues?: Partial<Filters>) {
     [appliedFilters]
   );
 
-const fetchData = useCallback(
-  async (arg?: FetchDataArg, append: boolean = false) => {
-    // ✅ รองรับทั้งรูปแบบเดิม (เลขหน้า) และรูปแบบใหม่ (object)
-    const page = typeof arg === "number" ? arg : arg?.page ?? 1;
-    const sseBump =
-      typeof arg === "object" && arg !== null ? arg.sseBump : undefined;
+  const fetchData = useCallback(
+    async (arg?: FetchDataArg, append: boolean = false) => {
+      // ✅ รองรับทั้งรูปแบบเดิม (เลขหน้า) และรูปแบบใหม่ (object)
+      const page = typeof arg === "number" ? arg : arg?.page ?? 1;
+      const sseBump =
+        typeof arg === "object" && arg !== null ? arg.sseBump : undefined;
 
-    try {
-      if (!append) setIsRefetching(true);
+      try {
+        if (!append) setIsRefetching(true);
 
-      const { params, specialSingleThai } = buildFilterQuery(
-        page,
-        Math.max(100, pagination.pageSize * 2)
-      );
+        const { params, specialSingleThai } = buildFilterQuery(
+          page,
+          Math.max(100, pagination.pageSize * 2)
+        );
 
-      // ✅ กัน cache: ถ้ามาจาก SSE ให้ใส่ _ts ลง query
-      const finalParams: Record<string, string> = {
-        ...params,
-        ...(typeof sseBump === "number" ? { _ts: String(sseBump) } : {}),
-      };
-
-      let newItems: (Kycrequest & { __keys: string })[] = [];
-      let fullResponse: CompanyAllData | null = null;
-
-      if (specialSingleThai) {
-        const [firstRes, lastRes] = await Promise.all([
-          apiClient.get<CompanyAllData>("/api/company", {
-            params: { ...finalParams, firstNameThai: specialSingleThai },
-          }),
-          apiClient.get<CompanyAllData>("/api/company", {
-            params: { ...finalParams, lastNameThai: specialSingleThai },
-          }),
-        ]);
-
-        const mergedItems = [
-          ...(firstRes.data?.data?.items ?? []),
-          ...(lastRes.data?.data?.items ?? []),
-        ];
-
-        newItems = mergedItems.map(toDisplayRow);
-
-        fullResponse = {
-          ...firstRes.data,
-          data: {
-            ...firstRes.data.data,
-            items: mergedItems,
-          },
+        // ✅ กัน cache: ถ้ามาจาก SSE ให้ใส่ _ts ลง query
+        const finalParams: Record<string, string> = {
+          ...params,
+          ...(typeof sseBump === "number" ? { _ts: String(sseBump) } : {}),
         };
-      } else {
-        const res = await apiClient.get<CompanyAllData>("/api/company", {
-          params: finalParams,
-        });
-        fullResponse = res.data;
-        const rawItems = res.data?.data?.items ?? [];
-        newItems = rawItems.map(toDisplayRow);
-      }
 
-      const sorted = newItems.sort((a, b) => getRowTs(b) - getRowTs(a));
+        let newItems: (Kycrequest & { __keys: string })[] = [];
+        let fullResponse: CompanyAllData | null = null;
 
-      if (append) {
-        setItems((prev) => {
-          const existingIds = new Set(prev.map((i) => i.transactionNo));
-          return [
-            ...prev,
-            ...sorted.filter((i) => !existingIds.has(i.transactionNo)),
+        if (specialSingleThai) {
+          const [firstRes, lastRes] = await Promise.all([
+            apiClient.get<CompanyAllData>("/api/company", {
+              params: { ...finalParams, firstNameThai: specialSingleThai },
+            }),
+            apiClient.get<CompanyAllData>("/api/company", {
+              params: { ...finalParams, lastNameThai: specialSingleThai },
+            }),
+          ]);
+
+          const mergedItems = [
+            ...(firstRes.data?.data?.items ?? []),
+            ...(lastRes.data?.data?.items ?? []),
           ];
-        });
-      } else {
-        setItems(sorted);
-        setPagination((p) => ({ ...p, pageIndex: 0 }));
-      }
 
-      setTotal(sorted.length);
-      setNextPage(page + 1);
-      setRawData(fullResponse);
-      setError(null);
-    } catch (e: unknown) {
-      if (isAxiosError(e)) {
-        const axiosErr = e as AxiosError;
-        if (axiosErr.response?.status === 401) {
-          await signOut({ callbackUrl: "/signin" });
-          return;
+          newItems = mergedItems.map(toDisplayRow);
+
+          fullResponse = {
+            ...firstRes.data,
+            data: {
+              ...firstRes.data.data,
+              items: mergedItems,
+            },
+          };
+        } else {
+          const res = await apiClient.get<CompanyAllData>("/api/company", {
+            params: finalParams,
+          });
+          fullResponse = res.data;
+          const rawItems = res.data?.data?.items ?? [];
+          newItems = rawItems.map(toDisplayRow);
         }
-        setError(new Error(axiosErr.message));
-      } else {
-        setError(e instanceof Error ? e : new Error(String(e)));
+
+        const sorted = newItems.sort((a, b) => getRowTs(b) - getRowTs(a));
+
+        if (append) {
+          setItems((prev) => {
+            const existingIds = new Set(prev.map((i) => i.transactionNo));
+            return [
+              ...prev,
+              ...sorted.filter((i) => !existingIds.has(i.transactionNo)),
+            ];
+          });
+        } else {
+          setItems(sorted);
+          setPagination((p) => ({ ...p, pageIndex: 0 }));
+        }
+
+        setTotal(sorted.length);
+        setNextPage(page + 1);
+        setRawData(fullResponse);
+        setError(null);
+      } catch (e: unknown) {
+        if (isAxiosError(e)) {
+          const axiosErr = e as AxiosError;
+          if (axiosErr.response?.status === 401) {
+            await signOut({ callbackUrl: "/signin" });
+            return;
+          }
+          setError(new Error(axiosErr.message));
+        } else {
+          setError(e instanceof Error ? e : new Error(String(e)));
+        }
+      } finally {
+        setIsLoading(false);
+        setIsRefetching(false);
       }
-    } finally {
-      setIsLoading(false);
-      setIsRefetching(false);
-    }
-  },
-  [buildFilterQuery, pagination.pageSize]
-);
+    },
+    [buildFilterQuery, pagination.pageSize]
+  );
 
   useEffect(() => {
     fetchData(1, false);
-  }, [appliedFilters]);
+  }, [appliedFilters, fetchData]);
 
   const apply = useCallback(() => {
     setAppliedFilters(draftFilters);
