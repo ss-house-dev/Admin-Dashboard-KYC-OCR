@@ -152,7 +152,19 @@ export default function DetailView({
       {/* Header */}
       <div className="flex items-center justify-between px-4 pt-4">
         <h2 className="font-semibold text-xl ">Application Details</h2>
-        <Button variant="ghost" size="sm" onClick={onClose} aria-label="Close">
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => {
+            try {
+              window.dispatchEvent(new CustomEvent("dashboard:detail-closed"));
+            } catch {
+              /* noop */
+            }
+            onClose();
+          }}
+          aria-label="Close"
+        >
           <X className="h-6 w-6 text-[#9CA3AF] size-6" />
         </Button>
       </div>

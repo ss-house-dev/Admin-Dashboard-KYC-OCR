@@ -9,6 +9,8 @@ import type { CompanyAllData } from "../types/kyc";
 import type { Kycrequest } from "../components/column";
 import { signOut } from "next-auth/react";
 
+export type FetchDataArg = number | { page?: number; sseBump?: number };
+
 export function useKycData(defaultValues?: Partial<Filters>) {
   // Loading/Error
   const [isLoading, setIsLoading] = useState(true);
@@ -87,7 +89,12 @@ export function useKycData(defaultValues?: Partial<Filters>) {
   );
 
   const fetchData = useCallback(
-    async (page: number = 1, append: boolean = false) => {
+    async (arg?: FetchDataArg, append: boolean = false) => {
+      // ✅ รองรับทั้งรูปแบบเดิม (เลขหน้า) และรูปแบบใหม่ (object)
+      const page = typeof arg === "number" ? arg : arg?.page ?? 1;
+      const sseBump =
+        typeof arg === "object" && arg !== null ? arg.sseBump : undefined;
+
       try {
         if (!append) setIsRefetching(true);
 
@@ -96,25 +103,32 @@ export function useKycData(defaultValues?: Partial<Filters>) {
           Math.max(100, pagination.pageSize * 2)
         );
 
+        // ✅ กัน cache: ถ้ามาจาก SSE ให้ใส่ _ts ลง query
+        const finalParams: Record<string, string> = {
+          ...params,
+          ...(typeof sseBump === "number" ? { _ts: String(sseBump) } : {}),
+        };
+
         let newItems: (Kycrequest & { __keys: string })[] = [];
         let fullResponse: CompanyAllData | null = null;
 
         if (specialSingleThai) {
           const [firstRes, lastRes] = await Promise.all([
             apiClient.get<CompanyAllData>("/api/company", {
-              params: { ...params, firstNameThai: specialSingleThai },
+              params: { ...finalParams, firstNameThai: specialSingleThai },
             }),
             apiClient.get<CompanyAllData>("/api/company", {
-              params: { ...params, lastNameThai: specialSingleThai },
+              params: { ...finalParams, lastNameThai: specialSingleThai },
             }),
           ]);
+
           const mergedItems = [
             ...(firstRes.data?.data?.items ?? []),
             ...(lastRes.data?.data?.items ?? []),
           ];
+
           newItems = mergedItems.map(toDisplayRow);
 
-          // เก็บ fullResponse ล่าสุด (อันใดอันหนึ่งก็ได้ แต่ merged เอาไว้ใน items)
           fullResponse = {
             ...firstRes.data,
             data: {
@@ -124,7 +138,7 @@ export function useKycData(defaultValues?: Partial<Filters>) {
           };
         } else {
           const res = await apiClient.get<CompanyAllData>("/api/company", {
-            params,
+            params: finalParams,
           });
           fullResponse = res.data;
           const rawItems = res.data?.data?.items ?? [];
@@ -153,7 +167,6 @@ export function useKycData(defaultValues?: Partial<Filters>) {
       } catch (e: unknown) {
         if (isAxiosError(e)) {
           const axiosErr = e as AxiosError;
-
           if (axiosErr.response?.status === 401) {
             await signOut({ callbackUrl: "/signin" });
             return;
@@ -172,7 +185,7 @@ export function useKycData(defaultValues?: Partial<Filters>) {
 
   useEffect(() => {
     fetchData(1, false);
-  }, [appliedFilters]);
+  }, [appliedFilters, fetchData]);
 
   const apply = useCallback(() => {
     setAppliedFilters(draftFilters);
