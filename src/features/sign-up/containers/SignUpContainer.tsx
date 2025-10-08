@@ -56,9 +56,15 @@ export default function SignUpContainer() {
 
       const msg = res?.error ?? "Login failed";
       if (/user/i.test(msg)) {
-        form.setError("username", { type: "server", message: "User account not found." });
+        form.setError("username", {
+          type: "server",
+          message: "User account not found.",
+        });
       } else if (/credential|password/i.test(msg) || /invalid/i.test(msg)) {
-        form.setError("password", { type: "server", message: "Username or password is incorrect." });
+        form.setError("password", {
+          type: "server",
+          message: "Username or password is incorrect.",
+        });
       } else {
         toast.error("Auto login failed", { description: msg });
       }
@@ -67,7 +73,9 @@ export default function SignUpContainer() {
         e as AxiosError<ApiErrorResponse>,
         (name, err) => form.setError(name, err)
       );
-      const first = Object.keys(form.formState.errors)[0] as keyof SignUpValues | undefined;
+      const first = Object.keys(form.formState.errors)[0] as
+        | keyof SignUpValues
+        | undefined;
       if (first) form.setFocus(first);
     }
   };

@@ -48,6 +48,7 @@ export default function SignUpView({
           <form
             id={formId}
             onSubmit={onSubmit}
+            noValidate
             className="min-h-0 overflow-auto space-y-3 pr-1"
           >
             <TextField
@@ -87,7 +88,7 @@ export default function SignUpView({
               inputClassName="py-2.5"
               labelClassName="pb-0 mb-1"
             />
-            
+
             <PasswordField
               label="Password"
               placeholder="Enter your password"
