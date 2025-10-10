@@ -100,7 +100,7 @@ export function useKycData(defaultValues?: Partial<Filters>) {
 
         const { params, specialSingleThai } = buildFilterQuery(
           page,
-          Math.max(100, pagination.pageSize * 2)
+          Math.max(100, pagination.pageSize)
         );
 
         // ✅ กัน cache: ถ้ามาจาก SSE ให้ใส่ _ts ลง query
