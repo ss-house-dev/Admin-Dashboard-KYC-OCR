@@ -18,6 +18,8 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
+import { format } from "date-fns";
+import { th, enGB } from "date-fns/locale";
 
 type Props = {
   status: string;
@@ -72,7 +74,8 @@ export function FilterView({
     return t;
   }, []);
 
-  const fmtDisplay = (d?: Date) => (d ? d.toLocaleDateString() : undefined);
+  const fmtDisplay = (d?: Date) =>
+    d ? format(d, "d MMM yyyy", { locale: enGB }) : undefined;
 
   return (
     <div className="mt-4 flex flex-wrap items-end gap-4">
