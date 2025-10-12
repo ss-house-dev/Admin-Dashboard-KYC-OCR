@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { toYmd } from "../utils/datetime";
-import type { KycRequestApi, CompanyAllData } from "../types/kyc";
+import type { KycRequestApi } from "../types/kyc";
 import { useKycData } from "../hooks/useKycData";
 import { columns } from "../components/column";
 import { DataTable } from "../components/DataTable";
@@ -10,9 +10,6 @@ import { SearchView } from "../components/SearchView";
 import { FilterView } from "../components/FilterView";
 import DetailView from "../components/DetailView";
 import { LoadingSpinner } from "@/components/LoadingSpinner";
-import { ErrorView } from "@/components/ErrorView";
-import { signOut } from "next-auth/react";
-import { isAxiosError } from "axios";
 import { useKycRequestsSSE } from "../hooks/useKycRequestsSSE";
 
 // ------- helpers (ไม่มี any) -------
@@ -62,11 +59,11 @@ export default function DashBoardContainer() {
 
   const {
     isLoading,
-    error,
     draftFilters,
     setDraftFilters,
     apply,
     clearAll,
+    pageCount,
     items,
     rawData,
     pagination,
@@ -84,9 +81,10 @@ export default function DashBoardContainer() {
       if (refreshLockRef.current) window.clearTimeout(refreshLockRef.current);
       refreshLockRef.current = null;
     }, 500);
-    console.debug("[SSE] safeRefresh(): call fetchData()");
-    fetchData({ sseBump: Date.now() }); // ดึงข้อมูลด้วยตัวกรองเดิมจาก hook
-  }, [fetchData]);
+    const currPage = pagination.pageIndex + 1; // ✅ ใช้หน้าปัจจุบัน
+    const currLimit = pagination.pageSize; // ✅ ใช้ limit ปัจจุบัน
+    fetchData({ page: currPage, limit: currLimit, sseBump: Date.now() });
+  }, [fetchData, pagination.pageIndex, pagination.pageSize]);
 
   // 1) จาก appliedFilters.companyId (ถ้ามี) → 2) จาก ENV → 3) จากรายการแรกใน rawData
   const companyIdForSSE: string | undefined = React.useMemo(() => {
@@ -310,18 +308,6 @@ export default function DashBoardContainer() {
 
   if (isLoading) return <LoadingSpinner message="Loading…" />;
 
-  if (error) {
-    if (
-      (isAxiosError(error) && error.response?.status === 401) ||
-      error.message.includes("Unauthorized")
-    ) {
-      void signOut({ callbackUrl: "/signin" });
-      return null;
-    }
-
-    return <ErrorView error={error} />;
-  }
-
   return (
     <div className="h-dvh flex flex-col overflow-hidden">
       {/* Search + Filter */}
@@ -381,6 +367,7 @@ export default function DashBoardContainer() {
             data={items}
             pagination={pagination}
             onPaginationChange={setPagination}
+            pageCount={pageCount}  
           />
         </div>
 

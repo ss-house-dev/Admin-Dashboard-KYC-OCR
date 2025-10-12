@@ -63,6 +63,7 @@ interface DataTableProps<TData, TValue> {
   pagination?: PaginationState;
   onPaginationChange?: OnChangeFn<PaginationState>;
   onView?: (row: TData) => void;
+  pageCount?: number;
 }
 
 export function DataTable<TData, TValue>({
@@ -72,6 +73,7 @@ export function DataTable<TData, TValue>({
   pagination,
   onPaginationChange,
   onView,
+  pageCount,  
 }: DataTableProps<TData, TValue>) {
   /** เก็บ state ภายในเพื่อให้ patch แถวได้แบบไม่รีหน้า */
   const [rows, setRows] = React.useState<TData[]>(data);
@@ -160,6 +162,8 @@ export function DataTable<TData, TValue>({
     getPaginationRowModel: getPaginationRowModel(),
     state: pagination ? { pagination } : undefined,
     onPaginationChange,
+    pageCount: Math.max(1, pageCount ?? 1),
+    manualPagination: true,
     meta: {
       onViewRow: handleViewFromButton,
       activeKey,
@@ -167,6 +171,17 @@ export function DataTable<TData, TValue>({
         computeRowKey(rowOriginal as unknown as Record<string, unknown>),
     },
   });
+
+  React.useEffect(() => {
+  if (!pagination) return;
+  const maxIndex = Math.max(0, (pageCount ?? 1) - 1);
+  if (pagination.pageIndex > maxIndex) {
+    onPaginationChange?.({
+      pageIndex: maxIndex,
+      pageSize: pagination.pageSize,
+    });
+  }
+}, [pageCount, pagination, onPaginationChange]);
   return (
     <>
       <div

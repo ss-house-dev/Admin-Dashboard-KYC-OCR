@@ -12,7 +12,8 @@ interface DataTablePaginationProps<TData> {
 export function DataTablePagination<TData>({
   table,
 }: DataTablePaginationProps<TData>) {
-  const total = table.getPageCount();
+  const totalFromTable = table.getPageCount();              // 👈 มาจาก pageCount ที่ส่งเข้า useReactTable
+  const total = Math.max(1, Number(totalFromTable) || 1); 
   const curr = table.getState().pagination.pageIndex + 1;
 
   const getPages = (total: number, curr: number) => {

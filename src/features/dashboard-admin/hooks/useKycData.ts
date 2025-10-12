@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { type PaginationState } from "@tanstack/react-table";
 import { isAxiosError } from "axios";
 import type { AxiosError } from "axios";
@@ -9,7 +9,9 @@ import type { CompanyAllData } from "../types/kyc";
 import type { Kycrequest } from "../components/column";
 import { signOut } from "next-auth/react";
 
-export type FetchDataArg = number | { page?: number; sseBump?: number };
+export type FetchDataArg =
+  | number
+  | { page?: number; limit?: number; sseBump?: number };
 
 export function useKycData(defaultValues?: Partial<Filters>) {
   // Loading/Error
@@ -88,22 +90,30 @@ export function useKycData(defaultValues?: Partial<Filters>) {
     [appliedFilters]
   );
 
+  const [pageCount, setPageCount] = useState<number>(-1);
+
   const fetchData = useCallback(
     async (arg?: FetchDataArg, append: boolean = false) => {
-      // ✅ รองรับทั้งรูปแบบเดิม (เลขหน้า) และรูปแบบใหม่ (object)
       const page = typeof arg === "number" ? arg : arg?.page ?? 1;
       const sseBump =
         typeof arg === "object" && arg !== null ? arg.sseBump : undefined;
+
+      // ใช้ limit จาก arg ถ้ามี; ไม่มีก็ใช้ pagination.pageSize
+      const selectedLimit =
+        typeof arg === "object" && arg?.limit != null
+          ? arg.limit
+          : pagination.pageSize;
+
+      const effectiveLimit = selectedLimit;
 
       try {
         if (!append) setIsRefetching(true);
 
         const { params, specialSingleThai } = buildFilterQuery(
           page,
-          Math.max(100, pagination.pageSize * 2)
+          effectiveLimit
         );
 
-        // ✅ กัน cache: ถ้ามาจาก SSE ให้ใส่ _ts ลง query
         const finalParams: Record<string, string> = {
           ...params,
           ...(typeof sseBump === "number" ? { _ts: String(sseBump) } : {}),
@@ -128,7 +138,6 @@ export function useKycData(defaultValues?: Partial<Filters>) {
           ];
 
           newItems = mergedItems.map(toDisplayRow);
-
           fullResponse = {
             ...firstRes.data,
             data: {
@@ -147,6 +156,13 @@ export function useKycData(defaultValues?: Partial<Filters>) {
 
         const sorted = newItems.sort((a, b) => getRowTs(b) - getRowTs(a));
 
+        const meta = {
+          total: fullResponse?.data?.total ?? sorted.length,
+          pages: fullResponse?.data?.pages ?? 1,
+          page: fullResponse?.data?.page ?? page,
+          limit: fullResponse?.data?.limit ?? effectiveLimit,
+        };
+
         if (append) {
           setItems((prev) => {
             const existingIds = new Set(prev.map((i) => i.transactionNo));
@@ -157,11 +173,13 @@ export function useKycData(defaultValues?: Partial<Filters>) {
           });
         } else {
           setItems(sorted);
-          setPagination((p) => ({ ...p, pageIndex: 0 }));
         }
 
-        setTotal(sorted.length);
-        setNextPage(page + 1);
+        setPageCount(meta.pages);
+
+        setTotal(meta.total);
+        setNextPage(meta.page + 1);
+        setPageCount(meta.pages); // <<— เก็บจำนวนหน้าทั้งหมด จาก API
         setRawData(fullResponse);
         setError(null);
       } catch (e: unknown) {
@@ -183,11 +201,31 @@ export function useKycData(defaultValues?: Partial<Filters>) {
     [buildFilterQuery, pagination.pageSize]
   );
 
+  const prevPageSizeRef = useRef(pagination.pageSize);
+
   useEffect(() => {
-    fetchData(1, false);
-  }, [appliedFilters, fetchData]);
+    const page = pagination.pageIndex + 1; // 1-based
+    const limit = pagination.pageSize;
+    const pageSizeChanged = prevPageSizeRef.current !== pagination.pageSize;
+
+    // ถ้าเพิ่ง "เปลี่ยน limit" และตอนนี้ยังไม่อยู่หน้า 1 → เซ็ตไปหน้า 1 ก่อน แล้วค่อยให้ effect นี้รันรอบถัดไปเพื่อ fetch
+    if (pageSizeChanged && pagination.pageIndex !== 0) {
+      prevPageSizeRef.current = pagination.pageSize; // อัปเดต ref เพื่อไม่เข้าบล็อกนี้ซ้ำ
+      setPagination((p) => ({ ...p, pageIndex: 0 }));
+      return; // ⛔ ยังไม่ fetch ในรอบนี้
+    }
+
+    // เคสอื่น ๆ:
+    // - เปลี่ยน limit แต่ "อยู่หน้า 1 อยู่แล้ว" → fetch page=1 ด้วย limit ใหม่
+    // - เปลี่ยนหน้า (pageIndex) ปกติ → fetch ตามหน้าใหม่
+    prevPageSizeRef.current = pagination.pageSize;
+    fetchData({ page: pageSizeChanged ? 1 : page, limit }, false);
+
+    // ให้ยิงใหม่เมื่อ filter เปลี่ยน, pageIndex เปลี่ยน, หรือ pageSize เปลี่ยน
+  }, [appliedFilters, pagination.pageIndex, pagination.pageSize, fetchData]);
 
   const apply = useCallback(() => {
+    setPagination((p) => ({ ...p, pageIndex: 0 }));
     setAppliedFilters(draftFilters);
   }, [draftFilters]);
 
@@ -199,6 +237,7 @@ export function useKycData(defaultValues?: Partial<Filters>) {
       endDate: "",
     };
     setDraftFilters(cleared);
+    setPagination((p) => ({ ...p, pageIndex: 0 }));
     setAppliedFilters(cleared);
   }, []);
 
@@ -209,6 +248,7 @@ export function useKycData(defaultValues?: Partial<Filters>) {
     items,
     total,
     rawData,
+    pageCount,
     pagination,
     setPagination,
     fetchData,

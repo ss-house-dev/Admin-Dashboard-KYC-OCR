@@ -38,8 +38,8 @@ export async function fetchKycRequests(params: {
     accessToken,
     companyId,
     completedOnly, //= false เอาอันที่่ไม่เสร็จ
-    limit = 100,
-    page = 1,
+    limit ,
+    page ,
     embed = true,
     status,
     startDate,
@@ -95,8 +95,8 @@ export async function fetchDashboardKyc(
   const data = await fetchKycRequests({
     accessToken,
     companyId,
-    limit: opts?.limit ?? 100,
-    page: opts?.page ?? 1,
+    limit: opts?.limit,
+    page: opts?.page,
     status: opts?.status,
     startDate: opts?.startDate,
     endDate: opts?.endDate,
