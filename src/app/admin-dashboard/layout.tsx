@@ -1,6 +1,7 @@
 import { cookies } from "next/headers";
 import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/features/dashboard-admin/components/app-sidebar";
+import Providers from "../providers";
 
 export default async function Layout({
   children,
@@ -11,11 +12,13 @@ export default async function Layout({
   const defaultOpen = cookieStore.get("sidebar_state")?.value === "true";
 
   return (
-    <SidebarProvider defaultOpen={defaultOpen}>
-      <AppSidebar />
-      <SidebarInset className="flex min-h-svh w-full">
-        {children}
-      </SidebarInset>
-    </SidebarProvider>
+    <Providers>
+      <SidebarProvider defaultOpen={defaultOpen}>
+        <AppSidebar />
+        <SidebarInset className="flex min-h-svh w-full">
+          {children}
+        </SidebarInset>
+      </SidebarProvider>
+    </Providers>
   );
 }
