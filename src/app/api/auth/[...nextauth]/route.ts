@@ -276,14 +276,14 @@ export const authOptions: NextAuthOptions = {
       s.accessToken = t.accessToken;
       s.refreshToken = t.refreshToken;
 
-      console.groupCollapsed("[Auth] Session built");
-      console.table({
-        userId: s.user?.id,
-        role: s.user?.role ?? "(none)",
-        hasAccessToken: Boolean(s.accessToken),
-        hasRefreshToken: Boolean(s.refreshToken),
-      });
-      console.groupEnd();
+      // console.groupCollapsed("[Auth] Session built");
+      // console.table({
+      //   userId: s.user?.id,
+      //   role: s.user?.role ?? "(none)",
+      //   hasAccessToken: Boolean(s.accessToken),
+      //   hasRefreshToken: Boolean(s.refreshToken),
+      // });
+      // console.groupEnd();
 
       return s;
     },
