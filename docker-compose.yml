@@ -1,0 +1,28 @@
+services:
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        NEXT_PUBLIC_API_BASE_URL: "/"
+        NEXTAUTH_URL: "https://kyra-dashboard.sshouse.dev"
+    container_name: admin-dashboard-kyc-ocr
+    ports:
+      - "3399:3399"
+    environment:
+      NODE_ENV: production
+      PORT: 3399
+
+      NEXTAUTH_URL: "https://kyra-dashboard.sshouse.dev"
+      NEXTAUTH_SECRET: "bcd2e344a2a1987951bf6e9fad6f90a5e305551caedff8dbac09c8108c37f33e"
+    restart: unless-stopped
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          'node -e "require(''http'').get(''http://localhost:''+(process.env.PORT||3399), r=>process.exit(r.statusCode===200?0:1)).on(''error'',()=>process.exit(1))"',
+        ]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
