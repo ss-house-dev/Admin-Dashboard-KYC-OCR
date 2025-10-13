@@ -190,7 +190,7 @@ export const authOptions: NextAuthOptions = {
 
       // refresh token หมด -> เคลียร์ session
       if (t.refreshTokenExpires && Date.now() >= t.refreshTokenExpires) {
-        console.warn("[Auth] Refresh token expired -> clearing session");
+        // console.warn("[Auth] Refresh token expired -> clearing session");
         return {};
       }
 
@@ -238,19 +238,19 @@ export const authOptions: NextAuthOptions = {
             t.role = rd.role;
           }
 
-          console.log("[Auth] Token refreshed:", {
-            userId: t.id,
-            role: t.role ?? "(none)",
-            accessTokenExpiresAt: new Date(t.accessTokenExpires).toISOString(),
-            refreshTokenExpiresAt: new Date(
-              t.refreshTokenExpires ?? 0
-            ).toISOString(),
-          });
+          // console.log("[Auth] Token refreshed:", {
+          //   userId: t.id,
+          //   role: t.role ?? "(none)",
+          //   accessTokenExpiresAt: new Date(t.accessTokenExpires).toISOString(),
+          //   refreshTokenExpiresAt: new Date(
+          //     t.refreshTokenExpires ?? 0
+          //   ).toISOString(),
+          // });
 
           return t;
         }
       } catch (e) {
-        console.error("[Auth] Refresh token failed:", e);
+        // console.error("[Auth] Refresh token failed:", e);
         return {};
       }
 
@@ -261,10 +261,10 @@ export const authOptions: NextAuthOptions = {
       const t = token as AppJWT;
       const s = session as AppSession;
 
-      console.log("[Auth] session() callback:", {
-        token,
-        session,
-      });
+      // console.log("[Auth] session() callback:", {
+      //   token,
+      //   session,
+      // });
 
       s.user = {
         ...s.user,
